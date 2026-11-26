@@ -19,6 +19,8 @@ export type PhotoStat = {
   /** {@link ShootStat.key} of the shoot this file belongs to. */
   shootKey: string | null;
   sales: Sale[];
+  /** Downloads from per-sale records (with date & amount). */
+  detailedSalesCount: number;
   salesCount: number;
   revenue: number;
   lastSale: string | null;
@@ -49,6 +51,7 @@ export type ShootStat = {
   photos: PhotoStat[];
   /** Files with no sales. */
   unsoldPhotos: ShootPhoto[];
+  detailedSalesCount: number;
   salesCount: number;
   revenue: number;
   revenuePerPhoto: number | null;
@@ -87,6 +90,8 @@ export type Stats = {
   months: MonthStat[];
   /** Earnings not tied to a single asset in daily stats. */
   otherRevenue: number;
+  /** Historical pre-3-year sales aggregated by day without per-file breakdown. */
+  historicalOnly: { count: number; amount: number } | null;
   /** Lifetime earnings as reported by Shutterstock's earnings summary. */
   shutterstockTotal: number;
   /** Upload dates of the portfolio files, oldest first. */
@@ -170,6 +175,7 @@ const combineShoots = (target: ShootStat, sources: ShootStat[]): ShootStat => {
     thumbUrl: photos[0]?.product.thumbUrl ?? target.thumbUrl,
     photos,
     unsoldPhotos: all.flatMap((s) => s.unsoldPhotos),
+    detailedSalesCount: all.reduce((sum, s) => sum + s.detailedSalesCount, 0),
     salesCount: all.reduce((sum, s) => sum + s.salesCount, 0),
     revenue,
     revenuePerPhoto: publishedCount ? round(revenue / publishedCount) : null,
@@ -239,13 +245,17 @@ export const buildStats = (
   const assetLicenseTotals: LicenseTotals = {};
   const photos: PhotoStat[] = dataset.products.map((product) => {
     const byLicense: LicenseTotals = {};
-    let salesCount = 0;
+    let detailedSalesCount = 0;
     for (const sale of product.sales) {
       const lic = licenseOf(sale);
       addTo(byLicense, lic, sale.amount);
       addTo(assetLicenseTotals, lic, sale.amount);
-      salesCount += saleCountOf(sale);
+      detailedSalesCount += saleCountOf(sale);
     }
+    const salesCount = Math.max(
+      detailedSalesCount,
+      product.lifetimeDownloads ?? 0
+    );
     return {
       product: {
         ...product,
@@ -254,6 +264,7 @@ export const buildStats = (
       },
       shootKey: shootKeyOf.get(product.id) ?? null,
       sales: product.sales,
+      detailedSalesCount,
       salesCount,
       revenue: round(product.sales.reduce((sum, s) => sum + s.amount, 0)),
       lastSale: product.sales.reduce<string | null>(
@@ -263,7 +274,7 @@ export const buildStats = (
       byLicense,
     };
   });
-  photos.sort((a, b) => b.revenue - a.revenue);
+  photos.sort((a, b) => b.revenue - a.revenue || b.salesCount - a.salesCount);
   const soldIds = new Set(photos.map((p) => p.product.id));
 
   type ShootBase = Pick<
@@ -281,9 +292,11 @@ export const buildStats = (
 
   const makeShoot = (base: ShootBase, shootPhotos: PhotoStat[]): ShootStat => {
     const byLicense: LicenseTotals = {};
+    let detailedSalesCount = 0;
     let salesCount = 0;
     let lastSale: string | null = null;
     for (const photo of shootPhotos) {
+      detailedSalesCount += photo.detailedSalesCount;
       salesCount += photo.salesCount;
       lastSale = latest(lastSale, photo.lastSale);
       for (const [license, amount] of Object.entries(photo.byLicense)) {
@@ -301,6 +314,7 @@ export const buildStats = (
         base.unsoldPhotos[0]?.thumbUrl ??
         null,
       photos: shootPhotos,
+      detailedSalesCount,
       salesCount,
       revenue,
       revenuePerPhoto: base.publishedCount
@@ -448,6 +462,15 @@ export const buildStats = (
   const otherRevenue = round(
     dataset.otherSales.reduce((sum, s) => sum + s.amount, 0)
   );
+  const historicalSales = dataset.otherSales.filter(
+    (s) => s.license === 'adobe_historical'
+  );
+  const historicalOnly = historicalSales.length
+    ? {
+        count: historicalSales.reduce((sum, s) => sum + saleCountOf(s), 0),
+        amount: round(historicalSales.reduce((sum, s) => sum + s.amount, 0)),
+      }
+    : null;
   const revenue = round(months.reduce((sum, m) => sum + m.revenue, 0));
   const soldPhotos = photos.filter(
     (p) => p.salesCount > 0 || p.revenue > 0
@@ -481,6 +504,7 @@ export const buildStats = (
     shoots: merged.shoots,
     months,
     otherRevenue,
+    historicalOnly,
     shutterstockTotal: dataset.shutterstockTotal,
     portfolioDates: dataset.portfolio
       .flatMap((p) => (p.createdAt ? [p.createdAt] : []))

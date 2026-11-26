@@ -5,7 +5,14 @@ import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import type { ShootStat } from '../utils/aggregate';
 import { licenseSortKey } from '../utils/license-columns';
-import { licenseLabel, shootSubtitle, shootTitle } from '../utils/shoot-labels';
+import {
+  formatPartialRevenue,
+  isHistoricalOnly,
+  licenseLabel,
+  revenueHint,
+  shootSubtitle,
+  shootTitle,
+} from '../utils/shoot-labels';
 import { CardStat, RevenueBox } from './card-stat';
 import { ShootDetails } from './shoot-details';
 import type { SortState } from './sort-header';
@@ -105,15 +112,16 @@ export const ShootCards = ({
                   </div>
                   <RevenueBox
                     label={t('col.revenue')}
-                    value={formatMoney(shoot.revenue)}
+                    value={formatPartialRevenue(shoot, formatMoney)}
                     highlighted={sorted('revenue')}
+                    title={revenueHint(shoot, t)}
                   />
                 </div>
                 <div className={cardStyles.card__stats}>
                   <CardStat
                     label={t('shoots.col.perPhoto')}
                     value={
-                      shoot.revenuePerPhoto === null
+                      shoot.revenuePerPhoto === null || isHistoricalOnly(shoot)
                         ? '—'
                         : formatMoney(shoot.revenuePerPhoto)
                     }

@@ -10,6 +10,7 @@ export type YearStat = {
   avgMonthsOnSale: number | null;
   /** Published files; only the sold ones are known if portfolio wasn't loaded. */
   photoCount: number;
+  detailedSalesCount: number;
   salesCount: number;
   revenue: number;
 };
@@ -64,6 +65,10 @@ export const buildYears = (shoots: ShootStat[]): YearStat[] => {
           : null,
         photoCount: yearShoots.reduce(
           (sum, s) => sum + (s.publishedCount ?? s.photos.length),
+          0
+        ),
+        detailedSalesCount: yearShoots.reduce(
+          (sum, s) => sum + s.detailedSalesCount,
           0
         ),
         salesCount: yearShoots.reduce((sum, s) => sum + s.salesCount, 0),

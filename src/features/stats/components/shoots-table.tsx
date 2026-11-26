@@ -14,7 +14,13 @@ import {
   isDenseLicenseTable,
   licenseColumnCount,
 } from '../utils/license-columns';
-import { shootSubtitle, shootTitle } from '../utils/shoot-labels';
+import {
+  formatPartialRevenue,
+  isHistoricalOnly,
+  revenueHint,
+  shootSubtitle,
+  shootTitle,
+} from '../utils/shoot-labels';
 import { LicenseCells, LicenseHeaders } from './license-columns';
 import { ShootCards } from './shoot-cards';
 import { ShootDetails } from './shoot-details';
@@ -225,11 +231,12 @@ export const ShootsTable = ({
                   <td className={styles.table__num}>{shoot.salesCount}</td>
                   <td
                     className={`${styles.table__num} ${styles.table__revenue}`}
+                    title={revenueHint(shoot, t)}
                   >
-                    {formatMoney(shoot.revenue)}
+                    {formatPartialRevenue(shoot, formatMoney)}
                   </td>
                   <td className={styles.table__num}>
-                    {shoot.revenuePerPhoto === null
+                    {shoot.revenuePerPhoto === null || isHistoricalOnly(shoot)
                       ? '—'
                       : formatMoney(shoot.revenuePerPhoto)}
                   </td>

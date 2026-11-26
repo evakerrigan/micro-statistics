@@ -25,6 +25,7 @@ type RevenueBoxProps = {
   value: string;
   /** The list is sorted by revenue. */
   highlighted?: boolean;
+  title?: string;
 };
 
 /** A card's revenue: a green square beside the preview, the same height. */
@@ -32,9 +33,11 @@ export const RevenueBox = ({
   label,
   value,
   highlighted = false,
+  title,
 }: RevenueBoxProps) => (
   <div
     className={`${styles.revenueBox} ${highlighted ? styles.revenueBoxSorted : ''}`}
+    title={title}
   >
     <span className={styles.revenueBox__label}>{label}</span>
     <span className={styles.revenueBox__value}>{value}</span>

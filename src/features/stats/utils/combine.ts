@@ -170,6 +170,7 @@ export const combineAllStats = (
         thumbUrl: null,
         photos: [],
         unsoldPhotos: [],
+        detailedSalesCount: 0,
         salesCount: 0,
         revenue: 0,
         revenuePerPhoto: null,

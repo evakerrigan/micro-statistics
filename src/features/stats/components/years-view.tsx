@@ -13,7 +13,12 @@ import type { StockId } from '@/types/stock';
 import { useHiddenChartYears } from '../hooks/use-hidden-chart-years';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
 import { uploadedSortKey, type ShootStat } from '../utils/aggregate';
-import { shootSubtitle, shootTitle } from '../utils/shoot-labels';
+import {
+  formatPartialRevenue,
+  revenueHint,
+  shootSubtitle,
+  shootTitle,
+} from '../utils/shoot-labels';
 import {
   buildYears,
   buildYearSales,
@@ -164,8 +169,9 @@ export const YearsView = ({
                     <td className={styles.table__num}>{year.salesCount}</td>
                     <td
                       className={`${styles.table__num} ${styles.table__revenue}`}
+                      title={revenueHint(year, t)}
                     >
-                      {formatMoney(year.revenue)}
+                      {formatPartialRevenue(year, formatMoney)}
                     </td>
                   </tr>
                   {isOpen && (
@@ -336,8 +342,11 @@ const YearShootsTable = ({ shoots }: { shoots: ShootStat[] }) => {
                 </div>
               </td>
               <td className={styles.table__num}>{shoot.salesCount}</td>
-              <td className={`${styles.table__num} ${styles.table__revenue}`}>
-                {formatMoney(shoot.revenue)}
+              <td
+                className={`${styles.table__num} ${styles.table__revenue}`}
+                title={revenueHint(shoot, t)}
+              >
+                {formatPartialRevenue(shoot, formatMoney)}
               </td>
             </tr>
           ))}

@@ -1,6 +1,6 @@
 import type { MessageKey, Translate } from '@/lib/i18n';
 import { formatDate } from '@/utils/format';
-import { type ShootStat, UNKNOWN_LICENSE } from './aggregate';
+import { type PhotoStat, type ShootStat, UNKNOWN_LICENSE } from './aggregate';
 
 const LICENSE_KEYS: Record<string, MessageKey> = {
   '25_a_day': 'license.25_a_day',
@@ -19,6 +19,7 @@ const LICENSE_KEYS: Record<string, MessageKey> = {
   adobe_custom: 'license.adobe_custom',
   adobe_firefly: 'license.adobe_firefly',
   adobe_other_payment: 'license.adobe_other_payment',
+  adobe_historical: 'license.adobe_historical',
   [UNKNOWN_LICENSE]: 'license.other',
 };
 
@@ -53,3 +54,48 @@ const baseSubtitle = (shoot: ShootStat, t: Translate) => {
   }
   return t('shoots.sub.uploadDate');
 };
+
+type RevenueStat = {
+  revenue: number;
+  salesCount: number;
+  detailedSalesCount: number;
+};
+
+/** Whether every known download happened outside the detailed 3-year window. */
+export const isHistoricalOnly = (
+  stat: Pick<RevenueStat, 'salesCount' | 'detailedSalesCount'>
+) => stat.salesCount > 0 && stat.detailedSalesCount === 0;
+
+/** Formats per-file or per-shoot revenue (`—` when only >3y counts exist). */
+export const formatPartialRevenue = (
+  stat: RevenueStat,
+  formatMoney: (value: number) => string
+) => (isHistoricalOnly(stat) ? '—' : formatMoney(stat.revenue));
+
+/** Tooltip explaining missing or partial (>3y) per-file revenue on Adobe Stock. */
+export const revenueHint = (
+  stat: Pick<RevenueStat, 'salesCount' | 'detailedSalesCount'>,
+  t: Translate
+) => {
+  if (isHistoricalOnly(stat)) return t('stats.historicalRevenueHint');
+  if (stat.salesCount > stat.detailedSalesCount) {
+    return t('stats.partialRevenueHint', {
+      known: stat.detailedSalesCount,
+      total: stat.salesCount,
+    });
+  }
+  return undefined;
+};
+
+/** Formats a photo's download count + optional last sale date. */
+export const formatSoldMeta = (
+  photo: Pick<PhotoStat, 'salesCount' | 'lastSale'>,
+  t: Translate,
+  fmtDate: (value: string | null) => string
+) =>
+  photo.lastSale
+    ? t('details.soldMeta', {
+        n: photo.salesCount,
+        date: fmtDate(photo.lastSale),
+      })
+    : t('details.soldCountOnly', { n: photo.salesCount });

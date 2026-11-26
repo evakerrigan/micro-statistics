@@ -17,7 +17,11 @@ import {
   isDenseLicenseTable,
   licenseColumnCount,
 } from '../utils/license-columns';
-import { shootTitle } from '../utils/shoot-labels';
+import {
+  formatPartialRevenue,
+  revenueHint,
+  shootTitle,
+} from '../utils/shoot-labels';
 import { LicenseCells, LicenseHeaders } from './license-columns';
 import { PhotoCards } from './photo-cards';
 import { SortHeader } from './sort-header';
@@ -229,8 +233,9 @@ export const PhotosTable = ({ photos, shoots, licenses }: PhotosTableProps) => {
                   <td className={styles.table__num}>{photo.salesCount}</td>
                   <td
                     className={`${styles.table__num} ${styles.table__revenue}`}
+                    title={revenueHint(photo, t)}
                   >
-                    {formatMoney(photo.revenue)}
+                    {formatPartialRevenue(photo, formatMoney)}
                   </td>
                   <LicenseCells
                     licenses={licenses}

@@ -19,7 +19,13 @@ import {
   removeFromManualShoot,
   renameManualShoot,
 } from '../utils/manual-shoots';
-import { shootTitle } from '../utils/shoot-labels';
+import {
+  formatPartialRevenue,
+  formatSoldMeta,
+  isHistoricalOnly,
+  revenueHint,
+  shootTitle,
+} from '../utils/shoot-labels';
 import styles from './shoot-details.module.scss';
 
 type ShootDetailsProps = {
@@ -55,6 +61,7 @@ const unsoldAsPhoto = (
   },
   shootKey,
   sales: [],
+  detailedSalesCount: 0,
   salesCount: 0,
   revenue: 0,
   lastSale: null,
@@ -81,13 +88,12 @@ const SoldCard = ({ photo }: { photo: PhotoStat }) => {
       />
       <div className={styles.card__info}>
         <span>{photo.product.id}</span>
-        <strong>{formatMoney(photo.revenue)}</strong>
+        <strong title={revenueHint(photo, t)}>
+          {formatPartialRevenue(photo, formatMoney)}
+        </strong>
       </div>
       <div className={styles.card__meta}>
-        {t('details.soldMeta', {
-          n: photo.salesCount,
-          date: formatDate(photo.lastSale),
-        })}
+        {formatSoldMeta(photo, t, formatDate)}
       </div>
     </a>
   );
@@ -468,10 +474,12 @@ const EditableShootPhotos = ({
                 >
                   {photo.product.id}
                 </a>
-                <strong>
-                  {photo.salesCount
-                    ? formatMoney(photo.revenue)
-                    : t('details.notSold')}
+                <strong title={revenueHint(photo, t)}>
+                  {!photo.salesCount
+                    ? t('details.notSold')
+                    : isHistoricalOnly(photo)
+                      ? t('details.soldCountOnly', { n: photo.salesCount })
+                      : formatMoney(photo.revenue)}
                 </strong>
               </div>
               <div className={styles.card__meta} title={photo.product.headline}>

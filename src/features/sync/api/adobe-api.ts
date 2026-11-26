@@ -60,44 +60,47 @@ export const fetchAdobeOverview = async (
   return { totalEarnings, totalDownloads };
 };
 
-// --- Monthly Earnings Series (No 3-Year Clamp) -------------------------------
+// --- Daily / Monthly Insights Series (No 3-Year Clamp) -----------------------
 
-type EarningsPointRaw = {
+type InsightsSeriesPointRaw = {
   date?: string;
   amount?: number | string;
   value?: number | string;
   total?: number | string;
 };
 
-type EarningsSeriesResponse = {
+type InsightsSeriesResponse = {
   user?: { userId?: string | number };
   insights?: {
     statistics?: {
-      data?: EarningsPointRaw[];
+      data?: InsightsSeriesPointRaw[];
       total?: number | string;
     };
   };
 };
 
-export type AdobeMonthlySeriesPoint = {
-  /** `YYYY-MM` when parseable, or raw date string. */
+export type AdobeSeriesPoint = {
+  /** `YYYY-MM-DD` for `day`, `YYYY-MM` for `month`. */
   key: string;
-  amount: number;
+  value: number;
 };
 
-export const fetchAdobeEarningsSeries = async (
+const fetchAdobeInsightsSeries = async (
   session: AdobeSession,
+  route: 'earnings' | 'sales',
   startDate: string,
-  endDate: string
-): Promise<{ points: AdobeMonthlySeriesPoint[]; total: number }> => {
+  endDate: string,
+  timeRange: 'month' | 'day',
+  pickValue: (pt: InsightsSeriesPointRaw) => number
+): Promise<{ points: AdobeSeriesPoint[]; total: number }> => {
   const params = new URLSearchParams({
     start_date: startDate,
     end_date: endDate,
-    time_range: 'month',
+    time_range: timeRange,
     timestamp: String(Date.now()),
   });
-  const data = await session.getJson<EarningsSeriesResponse>(
-    `/${session.locale}/insights/earnings?${params}`
+  const data = await session.getJson<InsightsSeriesResponse>(
+    `/${session.locale}/insights/${route}?${params}`
   );
   if (!data?.user?.userId && !data?.insights?.statistics) {
     throw new AdobeAuthError();
@@ -105,13 +108,43 @@ export const fetchAdobeEarningsSeries = async (
   const stats = data.insights?.statistics;
   const points = (stats?.data ?? []).map((pt) => ({
     key: String(pt.date ?? ''),
-    amount: Number(pt.amount ?? pt.value ?? pt.total ?? 0) || 0,
+    value: pickValue(pt),
   }));
   return {
     points,
     total: Number(stats?.total ?? 0) || 0,
   };
 };
+
+export const fetchAdobeEarningsSeries = (
+  session: AdobeSession,
+  startDate: string,
+  endDate: string,
+  timeRange: 'month' | 'day' = 'day'
+) =>
+  fetchAdobeInsightsSeries(
+    session,
+    'earnings',
+    startDate,
+    endDate,
+    timeRange,
+    (pt) => Number(pt.amount ?? pt.total ?? pt.value ?? 0) || 0
+  );
+
+export const fetchAdobeSalesSeries = (
+  session: AdobeSession,
+  startDate: string,
+  endDate: string,
+  timeRange: 'month' | 'day' = 'day'
+) =>
+  fetchAdobeInsightsSeries(
+    session,
+    'sales',
+    startDate,
+    endDate,
+    timeRange,
+    (pt) => Number(pt.total ?? pt.value ?? pt.amount ?? 0) || 0
+  );
 
 // --- Portfolio (Photos, Illustrations, Vectors, Videos) ----------------------
 
@@ -126,6 +159,8 @@ type PortfolioItemRaw = {
   thumbnailUrl?: string;
   thumbnail_url?: string;
   largePreviewUrl?: string;
+  nb_downloads?: number;
+  nbSales?: number;
 };
 
 type PortfolioResponse = {
@@ -133,11 +168,20 @@ type PortfolioResponse = {
   content?: PortfolioItemRaw[];
 };
 
+export type AdobePortfolioItem = PortfolioItem & {
+  nbDownloads: number;
+};
+
+export type AdobePortfolioPage = {
+  items: AdobePortfolioItem[];
+  rawCount: number;
+};
+
 export const fetchAdobePortfolioPage = async (
   session: AdobeSession,
   page: number,
   sortBy: 'create_desc' | 'create_asc' = 'create_desc'
-): Promise<PortfolioItem[]> => {
+): Promise<AdobePortfolioPage> => {
   const params = new URLSearchParams({
     limit: String(ADOBE_PORTFOLIO_PAGE_SIZE),
     page: String(page),
@@ -150,7 +194,7 @@ export const fetchAdobePortfolioPage = async (
   if (!Array.isArray(data?.content)) {
     throw new AdobeFormatError(`portfolio page ${page} missing content array`);
   }
-  const items: PortfolioItem[] = [];
+  const items: AdobePortfolioItem[] = [];
   for (const raw of data.content) {
     if (raw.id === undefined || raw.id === null) continue;
     const typeId = raw.media_type_id ?? raw.contentType;
@@ -167,9 +211,10 @@ export const fetchAdobePortfolioPage = async (
       createdAt: toIsoDay(raw.creationDate),
       thumbUrl:
         raw.thumbnailUrl ?? raw.thumbnail_url ?? raw.largePreviewUrl ?? '',
+      nbDownloads: Number(raw.nb_downloads ?? raw.nbSales ?? 0) || 0,
     });
   }
-  return items;
+  return { items, rawCount: data.content.length };
 };
 
 // --- Individual Sales History (<= 3-Year Rolling Window) ---------------------
@@ -223,7 +268,8 @@ export type AdobeSalesWindowResult = {
 export const fetchAdobeSalesWindow = async (
   session: AdobeSession,
   startDate: string,
-  endDate: string
+  endDate: string,
+  onPage?: (page: number, pages: number) => void
 ): Promise<AdobeSalesWindowResult> => {
   const rows: AdobeSaleRow[] = [];
   let windowTotalEarnings = 0;
@@ -274,6 +320,7 @@ export const fetchAdobeSalesWindow = async (
     }
 
     const pages = Number(data.view?.pagination?.pages ?? 1) || 1;
+    onPage?.(page, pages);
     if (page >= pages || !history.length) break;
   }
 

@@ -86,6 +86,12 @@ export const en = {
     '{stock} shows lifetime earnings of {total}, but {collected} was collected ({diff} difference). Try updating again.',
   'stats.unmatched':
     '{count} sold {count|file|files} worth {amount} {count|has|have} no upload date. Open the “No shoot” row, tick the files of one shoot and group them into your own shoot.',
+  'stats.adobeHistorical':
+    'Adobe Stock only provides per-file and per-license sales details for the last 3 years. Earlier sales ({count} {count|download|downloads} worth {amount}) are included in total earnings, downloads, and monthly charts; file and shoot tables show lifetime download counts without older per-file revenue.',
+  'stats.historicalRevenueHint':
+    'Adobe Stock does not provide per-file dollar revenue for sales older than 3 years.',
+  'stats.partialRevenueHint':
+    'Revenue is for the last 3 years ({known} of {total} downloads); older per-file earnings are not exposed by Adobe Stock.',
   'tabs.shoots': 'By shoot',
   'tabs.photos': 'By file',
   'tabs.months': 'By year/month',
@@ -107,6 +113,7 @@ export const en = {
   'license.adobe_custom': 'Custom',
   'license.adobe_firefly': 'Firefly Bonus',
   'license.adobe_other_payment': 'Other payment',
+  'license.adobe_historical': 'Earlier (>3 yr)',
   'license.other': 'Other',
 
   'media.all': 'All',
@@ -138,6 +145,7 @@ export const en = {
   'shoots.pair.sold': 'sold',
 
   'details.soldMeta': '{n} {n|download|downloads} · last {date}',
+  'details.soldCountOnly': '{n} {n|download|downloads}',
   'details.notSold': 'Never sold',
   'details.shootName': 'Shoot name',
   'details.rename': 'Rename',
@@ -314,6 +322,12 @@ export const ru: Messages = {
     '{stock} показывает общий доход {total}, а собрано {collected} (разница {diff}). Попробуйте обновить данные ещё раз.',
   'stats.unmatched':
     '{count} проданных файлов на {amount} не имеют даты загрузки. Откройте строку «Без съёмки», отметьте файлы одной съёмки и соберите из них свою съёмку.',
+  'stats.adobeHistorical':
+    'Adobe Stock отдаёт детальную историю по файлам и типам лицензий только за последние 3 года. Более ранние продажи ({count} загр. на {amount}) учтены в общем доходе, загрузках и графиках по месяцам; в таблицах файлов и съёмок показано общее число загрузок без старых сумм дохода.',
+  'stats.historicalRevenueHint':
+    'Adobe Stock не отдаёт сумму дохода по отдельным файлам старше 3 лет.',
+  'stats.partialRevenueHint':
+    'Доход показан за последние 3 года ({known} из {total} загр.); более старые суммы Adobe Stock пофайлово не отдаёт.',
   'tabs.shoots': 'По съёмкам',
   'tabs.photos': 'По файлам',
   'tabs.months': 'По годам/месяцам',
@@ -335,6 +349,7 @@ export const ru: Messages = {
   'license.adobe_custom': 'Пользовательская',
   'license.adobe_firefly': 'Бонус Firefly',
   'license.adobe_other_payment': 'Прочие выплаты',
+  'license.adobe_historical': 'Ранее (>3 лет)',
   'license.other': 'Другое',
 
   'media.all': 'Все',
@@ -366,6 +381,7 @@ export const ru: Messages = {
   'shoots.pair.sold': 'продано',
 
   'details.soldMeta': '{n} загр. · посл. {date}',
+  'details.soldCountOnly': '{n} загр.',
   'details.notSold': 'Не продавалось',
   'details.shootName': 'Название съёмки',
   'details.rename': 'Переименовать',

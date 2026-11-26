@@ -37,6 +37,11 @@ export type Product = {
   thumbUrl: string;
   url: string;
   sales: Sale[];
+  /**
+   * Lifetime download count reported by the catalog when per-sale records for
+   * older periods (e.g. Adobe Stock >3 years) are not exposed per asset.
+   */
+  lifetimeDownloads?: number;
 };
 
 /** An approved item in the stock catalog. */

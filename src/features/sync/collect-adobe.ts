@@ -1,13 +1,22 @@
 import { openAdobeSession } from '@/lib/adobe-client';
 import { stockAssetUrl } from '@/lib/asset-url';
-import type { Dataset, PortfolioItem, Product, Shoot } from '@/types/stock';
+import type {
+  Dataset,
+  PortfolioItem,
+  Product,
+  Sale,
+  Shoot,
+} from '@/types/stock';
 import {
   ADOBE_PORTFOLIO_PAGE_SIZE,
+  type AdobePortfolioItem,
   type AdobeSaleRow,
+  type AdobeSeriesPoint,
   fetchAdobeEarningsSeries,
   fetchAdobeOtherPayments,
   fetchAdobeOverview,
   fetchAdobePortfolioPage,
+  fetchAdobeSalesSeries,
   fetchAdobeSalesWindow,
   fetchAdobeTopSellerDates,
 } from './api/adobe-api';
@@ -17,28 +26,40 @@ type OnProgress = (progress: SyncProgress) => void;
 
 const MAX_PORTFOLIO_PAGES = 500;
 
+const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
+
 const yearFromText = (text: string): number | null => {
-  const m = /\b((?:19|20)\d{2})\b/.exec(text);
+  const m = /(?:^|\D)((?:19|20)\d{2})(?:\D|$)/.exec(text);
   return m ? Number(m[1]) : null;
+};
+
+const isoDayFromSeriesKey = (key: string): string | null => {
+  const day = key.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
+  const month = key.slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(month) ? `${month}-01` : null;
 };
 
 const isoToday = (d = new Date()) => d.toISOString().slice(0, 10);
 
-const buildTwoYearWindows = (startYear: number, now = new Date()) => {
-  const currentYear = now.getFullYear();
-  const today = isoToday(now);
-  const windows: { start: string; end: string }[] = [];
-  for (let y = startYear; y <= currentYear; y += 2) {
-    const endYear = Math.min(y + 1, currentYear);
-    const end = endYear === currentYear ? today : `${endYear}-12-31`;
-    windows.push({ start: `${y}-01-01`, end });
+const toDayMap = (points: AdobeSeriesPoint[]) => {
+  const map = new Map<string, number>();
+  for (const pt of points) {
+    const day = isoDayFromSeriesKey(pt.key);
+    if (!day) continue;
+    map.set(day, (map.get(day) ?? 0) + pt.value);
   }
-  return windows;
+  return map;
+};
+
+const addMap = (map: Map<string, number>, key: string, delta: number) => {
+  map.set(key, (map.get(key) ?? 0) + delta);
 };
 
 /**
  * Collects the contributor's full Adobe Stock portfolio (photos, vectors,
- * illustrations, videos), chunked sales history, and Firefly/other payouts.
+ * illustrations, videos), recent per-asset sales (<= 3 years), lifetime
+ * daily earnings/downloads (no 3-year clamp), and Firefly/other payouts.
  */
 export const collectAdobeDataset = async (
   onProgress: OnProgress
@@ -50,32 +71,43 @@ export const collectAdobeDataset = async (
     const now = new Date();
     const today = isoToday(now);
     const overview = await fetchAdobeOverview(session);
-    const series = await fetchAdobeEarningsSeries(session, '2000-01-01', today);
+    const earningsSeries = await fetchAdobeEarningsSeries(
+      session,
+      '2000-01-01',
+      today,
+      'day'
+    );
+    const salesSeries = await fetchAdobeSalesSeries(
+      session,
+      '2000-01-01',
+      today,
+      'day'
+    );
 
     // 1. Portfolio (photos + illustrations + vectors + videos)
-    const byId = new Map<string, PortfolioItem>();
+    const byId = new Map<string, AdobePortfolioItem>();
     onProgress({ step: 'portfolio', done: 0, total: 1 });
     for (let page = 1; page <= MAX_PORTFOLIO_PAGES; page++) {
-      const items = await fetchAdobePortfolioPage(session, page);
+      const res = await fetchAdobePortfolioPage(session, page);
       const before = byId.size;
-      for (const item of items) byId.set(item.id, item);
+      for (const item of res.items) byId.set(item.id, item);
       onProgress({
         step: 'portfolio',
         done: page,
-        total: page + (items.length >= ADOBE_PORTFOLIO_PAGE_SIZE ? 1 : 0),
+        total: page + (res.rawCount >= ADOBE_PORTFOLIO_PAGE_SIZE ? 1 : 0),
       });
-      if (items.length < ADOBE_PORTFOLIO_PAGE_SIZE || byId.size === before) {
+      if (res.rawCount < ADOBE_PORTFOLIO_PAGE_SIZE || byId.size === before) {
         break;
       }
     }
-    const portfolio = [...byId.values()];
+    const portfolioWithStats = [...byId.values()];
 
-    // Determine earliest active year from monthly series + oldest portfolio item.
-    const seriesYears = series.points
-      .filter((p) => p.amount !== 0)
+    // Determine earliest active year from daily series + oldest portfolio item.
+    const seriesYears = [...earningsSeries.points, ...salesSeries.points]
+      .filter((p) => p.value !== 0)
       .map((p) => yearFromText(p.key))
       .filter((y): y is number => y !== null);
-    const portfolioYears = portfolio
+    const portfolioYears = portfolioWithStats
       .map((p) => (p.createdAt ? Number(p.createdAt.slice(0, 4)) : null))
       .filter((y): y is number => y !== null && Number.isFinite(y));
     const startYear = Math.min(
@@ -84,25 +116,27 @@ export const collectAdobeDataset = async (
       ...(portfolioYears.length ? portfolioYears : [now.getFullYear()])
     );
 
-    // 2. Sales history in <= 2-year windows (avoids Adobe's 3-year rolling clamp).
-    const windows = buildTwoYearWindows(startYear, now);
-    const allRows: AdobeSaleRow[] = [];
-    onProgress({ step: 'sales', done: 0, total: windows.length });
-    for (const [i, w] of windows.entries()) {
-      const res = await fetchAdobeSalesWindow(session, w.start, w.end);
-      allRows.push(...res.rows);
-      onProgress({ step: 'sales', done: i + 1, total: windows.length });
-    }
+    // 2. Per-asset sales history (single query — Adobe clamps start_date to
+    //    the last 3 years and ignores end_date, so multi-window queries would
+    //    return duplicate rows).
+    onProgress({ step: 'sales', done: 0, total: 1 });
+    const salesRes = await fetchAdobeSalesWindow(
+      session,
+      `${startYear}-01-01`,
+      today,
+      (done, total) => onProgress({ step: 'sales', done, total })
+    );
+    const allRows: AdobeSaleRow[] = salesRes.rows;
 
     // 3. Other payments (Firefly Contributor Bonus, etc.)
-    const otherSales = await fetchAdobeOtherPayments(
+    const otherPayments = await fetchAdobeOtherPayments(
       session,
       `${startYear}-01-01`,
       today
     );
 
     // 4. Optional fallback: try to recover creationDate for deleted sold assets.
-    const portfolioById = new Map(portfolio.map((p) => [p.id, p]));
+    const portfolioById = new Map(portfolioWithStats.map((p) => [p.id, p]));
     const hasMissingDates = allRows.some((r) => !portfolioById.has(r.mediaId));
     let topSellerDates = new Map<string, string>();
     if (hasMissingDates) {
@@ -118,7 +152,8 @@ export const collectAdobeDataset = async (
       }
     }
 
-    // 5. Assemble normalized Dataset
+    // 5. Assemble normalized products (recent detailed sales + portfolio items
+    //    whose catalog `nb_downloads` shows sales older than 3 years).
     const products = new Map<string, Product>();
     for (const row of allRows) {
       const portfolioItem = portfolioById.get(row.mediaId);
@@ -142,6 +177,101 @@ export const collectAdobeDataset = async (
       });
       products.set(row.mediaId, existing);
     }
+
+    for (const item of portfolioWithStats) {
+      if (item.nbDownloads <= 0) continue;
+      const existing = products.get(item.id);
+      if (existing) {
+        existing.lifetimeDownloads = Math.max(
+          item.nbDownloads,
+          existing.sales.length
+        );
+      } else {
+        products.set(item.id, {
+          id: item.id,
+          mediaType: item.mediaType,
+          isIllustration: item.isIllustration,
+          headline: item.headline,
+          createdAt: item.createdAt,
+          thumbUrl: item.thumbUrl,
+          url: stockAssetUrl('adobe', item.id, item.mediaType),
+          sales: [],
+          lifetimeDownloads: item.nbDownloads,
+        });
+      }
+    }
+
+    // 6. Reconcile daily earnings & downloads not covered by the 3-year
+    //    `sales-earnings` window (and `other-payments`) using the unclamped
+    //    `insights/earnings` and `insights/sales` daily series.
+    const dailyEarnings = toDayMap(earningsSeries.points);
+    const dailyDownloads = toDayMap(salesSeries.points);
+    const detailEarningsByDay = new Map<string, number>();
+    const detailDownloadsByDay = new Map<string, number>();
+    for (const row of allRows) {
+      addMap(detailEarningsByDay, row.date, row.amount);
+      addMap(detailDownloadsByDay, row.date, 1);
+    }
+    const otherEarningsByDay = new Map<string, number>();
+    for (const s of otherPayments) {
+      addMap(otherEarningsByDay, s.date, s.amount);
+    }
+
+    const otherSales: Sale[] = [...otherPayments];
+    const allDays = new Set([
+      ...dailyEarnings.keys(),
+      ...dailyDownloads.keys(),
+      ...detailEarningsByDay.keys(),
+      ...otherEarningsByDay.keys(),
+    ]);
+    for (const date of [...allDays].sort()) {
+      const targetE = dailyEarnings.get(date) ?? 0;
+      const targetD = dailyDownloads.get(date) ?? 0;
+      const knownE =
+        (detailEarningsByDay.get(date) ?? 0) +
+        (otherEarningsByDay.get(date) ?? 0);
+      const knownD = detailDownloadsByDay.get(date) ?? 0;
+      const diffE = round6(targetE - knownE);
+      const diffD = Math.max(0, Math.round(targetD - knownD));
+      // Ignore sub-cent rounding drift on payout-only days (e.g. other-payments
+      // rounded to 2 decimals vs 12-decimal insights/earnings).
+      if (diffD === 0 && Math.abs(diffE) < 0.01) continue;
+      if (diffD > 0 || Math.abs(diffE) >= 0.0001) {
+        otherSales.push({
+          date,
+          amount: diffE,
+          count: diffD,
+          license: 'adobe_historical',
+        });
+      }
+    }
+
+    // Safety net against `overview` if the daily series ever omitted any tail.
+    const collectedEarnings =
+      allRows.reduce((s, r) => s + r.amount, 0) +
+      otherSales.reduce((s, r) => s + r.amount, 0);
+    const collectedDownloads =
+      allRows.length + otherSales.reduce((s, r) => s + r.count, 0);
+    const tailEarnings = round6(overview.totalEarnings - collectedEarnings);
+    const tailDownloads = Math.max(
+      0,
+      overview.totalDownloads - collectedDownloads
+    );
+    if (Math.abs(tailEarnings) >= 0.02 || tailDownloads > 0) {
+      otherSales.push({
+        date: `${startYear}-01-01`,
+        amount: tailEarnings,
+        count: tailDownloads,
+        license: 'adobe_historical',
+      });
+    }
+
+    const portfolio: PortfolioItem[] = portfolioWithStats.map(
+      ({ nbDownloads: _nb, ...rest }) => {
+        void _nb;
+        return rest;
+      }
+    );
 
     const shootIdsByDate = new Map<string, Set<string>>();
     const addToDate = (date: string | null, id: string) => {

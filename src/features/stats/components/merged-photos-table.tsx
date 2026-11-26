@@ -20,6 +20,12 @@ import {
   type MergedPhotoStat,
   suggestLinkCandidates,
 } from '../utils/match-assets';
+import {
+  formatPartialRevenue,
+  formatSoldMeta,
+  isHistoricalOnly,
+  revenueHint,
+} from '../utils/shoot-labels';
 import { CardStat, RevenueBox } from './card-stat';
 import { LicenseCells, LicenseHeaders } from './license-columns';
 import { SortBar } from './sort-bar';
@@ -278,7 +284,11 @@ export const MergedPhotosTable = ({
                       </div>
                       <RevenueBox
                         label={t('col.revenue')}
-                        value={formatMoney(row.revenue)}
+                        value={
+                          row.parts.every((p) => isHistoricalOnly(p.photo))
+                            ? '—'
+                            : formatMoney(row.revenue)
+                        }
                         highlighted={sortKey === 'revenue'}
                       />
                     </div>
@@ -449,7 +459,9 @@ export const MergedPhotosTable = ({
                       <td
                         className={`${styles.table__num} ${styles.table__revenue}`}
                       >
-                        {formatMoney(row.revenue)}
+                        {row.parts.every((p) => isHistoricalOnly(p.photo))
+                          ? '—'
+                          : formatMoney(row.revenue)}
                       </td>
                       <LicenseCells
                         licenses={stocks}
@@ -537,12 +549,12 @@ const MatchRowDetails = ({
                   {part.photo.product.id}
                 </a>
               </div>
-              <div className={styles.table__secondary}>
-                {formatMoney(part.photo.revenue)} ·{' '}
-                {t('details.soldMeta', {
-                  n: part.photo.salesCount,
-                  date: formatDate(part.photo.lastSale),
-                })}
+              <div
+                className={styles.table__secondary}
+                title={revenueHint(part.photo, t)}
+              >
+                {formatPartialRevenue(part.photo, formatMoney)} ·{' '}
+                {formatSoldMeta(part.photo, t, formatDate)}
               </div>
               <div className={styles.table__secondary}>{part.shootLabel}</div>
             </div>

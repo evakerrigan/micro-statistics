@@ -2,7 +2,11 @@ import { useI18n } from '@/hooks/use-i18n';
 import { formatDate, formatMoney } from '@/utils/format';
 import type { PhotoStat } from '../utils/aggregate';
 import { licenseSortKey } from '../utils/license-columns';
-import { licenseLabel } from '../utils/shoot-labels';
+import {
+  formatPartialRevenue,
+  licenseLabel,
+  revenueHint,
+} from '../utils/shoot-labels';
 import { CardStat, RevenueBox } from './card-stat';
 import type { SortState } from './sort-header';
 import { SortBar } from './sort-bar';
@@ -89,8 +93,9 @@ export const PhotoCards = ({
               </div>
               <RevenueBox
                 label={t('col.revenue')}
-                value={formatMoney(photo.revenue)}
+                value={formatPartialRevenue(photo, formatMoney)}
                 highlighted={sorted('revenue')}
+                title={revenueHint(photo, t)}
               />
             </div>
             <div className={cardStyles.card__stats}>
