@@ -1,11 +1,11 @@
 {
   "extName": {
-    "message": "Contributor Stats for Shutterstock"
+    "message": "Microstock Statistics"
   },
   "extShortName": {
-    "message": "Shutterstock Stats"
+    "message": "Microstock Stats"
   },
   "extDescription": {
-    "message": "Sales statistics for Shutterstock contributors: earnings by file, shoot, month and license type. Not affiliated with Shutterstock."
+    "message": "Sales statistics for microstock contributors: earnings by file, shoot, month and license type across Shutterstock, Adobe Stock and iStock."
   }
 }

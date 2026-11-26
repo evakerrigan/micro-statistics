@@ -1,25 +1,29 @@
-import type {
-  Dataset,
-  HiddenChartYears,
-  ManualShoot,
-  ShootMerges,
-  ShootNames,
-  SyncCache,
-} from '@/types/shutterstock';
+import {
+  type Dataset,
+  type HiddenChartYears,
+  type ManualShoot,
+  type ShootMerges,
+  type ShootNames,
+  STOCK_IDS,
+  type StockId,
+  type SyncCache,
+} from '@/types/stock';
 
-const DATASET_KEY = 'dataset';
-const MANUAL_SHOOTS_KEY = 'manualShoots';
-const SHOOT_MERGES_KEY = 'shootMerges';
-const SHOOT_NAMES_KEY = 'shootNames';
-const HIDDEN_CHART_YEARS_KEY = 'hiddenChartYears';
-const SYNC_CACHE_KEY = 'syncCache';
+const stockKey = (stock: StockId, name: string) => `${stock}:${name}`;
+
+const DATASET_BASE = 'dataset';
+const MANUAL_SHOOTS_BASE = 'manualShoots';
+const SHOOT_MERGES_BASE = 'shootMerges';
+const SHOOT_NAMES_BASE = 'shootNames';
+const HIDDEN_CHART_YEARS_BASE = 'hiddenChartYears';
+const SYNC_CACHE_BASE = 'syncCache';
 
 // Outside the extension (plain `npm run dev`) chrome.storage is unavailable,
 // so fall back to localStorage to keep the UI usable while developing.
 const hasChromeStorage = () =>
   typeof chrome !== 'undefined' && !!chrome.storage?.local;
 
-const read = async <T>(key: string): Promise<T | null> => {
+const readRaw = async <T>(key: string): Promise<T | null> => {
   if (hasChromeStorage()) {
     const stored = await chrome.storage.local.get(key);
     return (stored[key] as T | undefined) ?? null;
@@ -32,7 +36,7 @@ const read = async <T>(key: string): Promise<T | null> => {
   }
 };
 
-const write = async (key: string, value: unknown): Promise<void> => {
+const writeRaw = async (key: string, value: unknown): Promise<void> => {
   if (hasChromeStorage()) {
     await chrome.storage.local.set({ [key]: value });
     return;
@@ -40,46 +44,119 @@ const write = async (key: string, value: unknown): Promise<void> => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-export const loadDataset = () => read<Dataset>(DATASET_KEY);
+const removeRaw = async (keys: string[]): Promise<void> => {
+  if (hasChromeStorage()) {
+    await chrome.storage.local.remove(keys);
+  }
+  try {
+    for (const k of keys) localStorage.removeItem(k);
+  } catch {
+    // Storage unavailable.
+  }
+};
 
-export const saveDataset = (dataset: Dataset) => write(DATASET_KEY, dataset);
+/**
+ * Reads a stock-scoped value. For Shutterstock, seamlessly falls back to the
+ * legacy unprefixed key so existing data saved before multi-stock support is kept.
+ */
+const read = async <T>(
+  stock: StockId | 'all',
+  base: string
+): Promise<T | null> => {
+  const scoped = await readRaw<T>(`${stock}:${base}`);
+  if (scoped !== null || stock !== 'shutterstock') return scoped;
+  return readRaw<T>(base);
+};
 
-export const loadManualShoots = async () =>
-  (await read<ManualShoot[]>(MANUAL_SHOOTS_KEY)) ?? [];
+const write = (stock: StockId | 'all', base: string, value: unknown) =>
+  writeRaw(`${stock}:${base}`, value);
 
-export const saveManualShoots = (shoots: ManualShoot[]) =>
-  write(MANUAL_SHOOTS_KEY, shoots);
+export const loadDataset = (stock: StockId = 'shutterstock') =>
+  read<Dataset>(stock, DATASET_BASE);
 
-export const loadShootMerges = async () =>
-  (await read<ShootMerges>(SHOOT_MERGES_KEY)) ?? {};
+export const saveDataset = (
+  dataset: Dataset,
+  stock: StockId = 'shutterstock'
+) => write(stock, DATASET_BASE, dataset);
 
-export const saveShootMerges = (merges: ShootMerges) =>
-  write(SHOOT_MERGES_KEY, merges);
+export const loadManualShoots = async (stock: StockId = 'shutterstock') =>
+  (await read<ManualShoot[]>(stock, MANUAL_SHOOTS_BASE)) ?? [];
 
-export const loadShootNames = async () =>
-  (await read<ShootNames>(SHOOT_NAMES_KEY)) ?? {};
+export const saveManualShoots = (
+  shoots: ManualShoot[],
+  stock: StockId = 'shutterstock'
+) => write(stock, MANUAL_SHOOTS_BASE, shoots);
 
-export const saveShootNames = (names: ShootNames) =>
-  write(SHOOT_NAMES_KEY, names);
+export const loadShootMerges = async (stock: StockId = 'shutterstock') =>
+  (await read<ShootMerges>(stock, SHOOT_MERGES_BASE)) ?? {};
 
-export const loadHiddenChartYears = async () =>
-  (await read<HiddenChartYears>(HIDDEN_CHART_YEARS_KEY)) ?? {};
+export const saveShootMerges = (
+  merges: ShootMerges,
+  stock: StockId = 'shutterstock'
+) => write(stock, SHOOT_MERGES_BASE, merges);
 
-export const saveHiddenChartYears = (hidden: HiddenChartYears) =>
-  write(HIDDEN_CHART_YEARS_KEY, hidden);
+export const loadShootNames = async (stock: StockId = 'shutterstock') =>
+  (await read<ShootNames>(stock, SHOOT_NAMES_BASE)) ?? {};
 
-export const loadSyncCache = async (): Promise<SyncCache> => {
-  const stored = await read<SyncCache>(SYNC_CACHE_KEY);
+export const saveShootNames = (
+  names: ShootNames,
+  stock: StockId = 'shutterstock'
+) => write(stock, SHOOT_NAMES_BASE, names);
+
+export const loadHiddenChartYears = async (
+  stock: StockId | 'all' = 'shutterstock'
+) => (await read<HiddenChartYears>(stock, HIDDEN_CHART_YEARS_BASE)) ?? {};
+
+export const saveHiddenChartYears = (
+  hidden: HiddenChartYears,
+  stock: StockId | 'all' = 'shutterstock'
+) => write(stock, HIDDEN_CHART_YEARS_BASE, hidden);
+
+export const loadSyncCache = async (
+  stock: StockId = 'shutterstock'
+): Promise<SyncCache> => {
+  const stored = await read<SyncCache>(stock, SYNC_CACHE_BASE);
   if (stored?.version === 1 && stored.months) return stored;
   return { version: 1, months: {} };
 };
 
-export const saveSyncCache = (cache: SyncCache) => write(SYNC_CACHE_KEY, cache);
+export const saveSyncCache = (
+  cache: SyncCache,
+  stock: StockId = 'shutterstock'
+) => write(stock, SYNC_CACHE_BASE, cache);
+
+export const loadAllDatasets = async (): Promise<
+  Partial<Record<StockId, Dataset>>
+> => {
+  const entries = await Promise.all(
+    STOCK_IDS.map(async (id) => [id, await loadDataset(id)] as const)
+  );
+  const result: Partial<Record<StockId, Dataset>> = {};
+  for (const [id, data] of entries) {
+    if (data) result[id] = data;
+  }
+  return result;
+};
+
+/** Removes all stored data for a single microstock. */
+export const clearStockData = async (stock: StockId): Promise<void> => {
+  const bases = [
+    DATASET_BASE,
+    MANUAL_SHOOTS_BASE,
+    SHOOT_MERGES_BASE,
+    SHOOT_NAMES_BASE,
+    HIDDEN_CHART_YEARS_BASE,
+    SYNC_CACHE_BASE,
+  ];
+  const keys = bases.map((b) => stockKey(stock, b));
+  if (stock === 'shutterstock') keys.push(...bases);
+  await removeRaw(keys);
+};
 
 /**
- * Removes everything the extension keeps in this browser: synced data,
- * incremental sync cache, the user's own shoots, renames and joins, hidden
- * chart years, and the theme / language choice.
+ * Removes everything the extension keeps in this browser across all
+ * microstocks: synced data, cache, own shoots, renames, joins, hidden chart
+ * years, and the theme / language choice.
  */
 export const clearAllData = async (): Promise<void> => {
   if (hasChromeStorage()) await chrome.storage.local.clear();

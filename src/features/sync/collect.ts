@@ -160,7 +160,7 @@ export const collectDataset = async (
   void _previous;
   onProgress({ step: 'connect', done: 0, total: 1 });
   const session = await openShutterstockSession();
-  const cache: SyncCache = await loadSyncCache();
+  const cache: SyncCache = await loadSyncCache('shutterstock');
   let cacheDirty = false;
 
   try {
@@ -334,12 +334,12 @@ export const collectDataset = async (
         daysDone += 1;
         onProgress({ step: 'sales', done: daysDone, total: dayJobs.length });
         if (daysDone % CHECKPOINT_EVERY === 0) {
-          await saveSyncCache(cache);
+          await saveSyncCache(cache, 'shutterstock');
         }
       });
     }
 
-    if (cacheDirty) await saveSyncCache(cache);
+    if (cacheDirty) await saveSyncCache(cache, 'shutterstock');
 
     return assembleDataset({
       cache,
@@ -353,7 +353,7 @@ export const collectDataset = async (
   } finally {
     if (cacheDirty) {
       try {
-        await saveSyncCache(cache);
+        await saveSyncCache(cache, 'shutterstock');
       } catch {
         // Ignore storage errors while cleaning up.
       }

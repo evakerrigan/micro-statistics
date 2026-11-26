@@ -9,6 +9,7 @@ import {
   formatMoneyTick,
   formatMonths,
 } from '@/utils/format';
+import type { StockId } from '@/types/stock';
 import { useHiddenChartYears } from '../hooks/use-hidden-chart-years';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
 import { uploadedSortKey, type ShootStat } from '../utils/aggregate';
@@ -29,12 +30,16 @@ import yearStyles from './years-view.module.scss';
 
 type YearsViewProps = {
   shoots: ShootStat[];
+  scope?: StockId | 'all';
 };
 
 const COLUMN_COUNT = 6;
 
 /** One row per upload year; a row opens the table of that year's shoots. */
-export const YearsView = ({ shoots }: YearsViewProps) => {
+export const YearsView = ({
+  shoots,
+  scope = 'shutterstock',
+}: YearsViewProps) => {
   const { t } = useI18n();
   const years = useMemo(() => buildYears(shoots), [shoots]);
   const yearSales = useMemo(() => buildYearSales(years), [years]);
@@ -44,7 +49,7 @@ export const YearsView = ({ shoots }: YearsViewProps) => {
     [yearSales]
   );
   const [openYears, setOpenYears] = useState<Set<string>>(new Set());
-  const hiddenYears = useHiddenChartYears();
+  const hiddenYears = useHiddenChartYears(scope);
   const chartYears = (chart: string) => ({
     hiddenYears: hiddenYears.value[chart] ?? [],
     onToggleYear: (year: string) => hiddenYears.toggle(chart, year),

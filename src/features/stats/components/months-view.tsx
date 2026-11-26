@@ -21,6 +21,8 @@ type MonthsViewProps = {
   licenses: string[];
   /** Upload dates of the portfolio files, oldest first. */
   portfolioDates: string[];
+  /** Optional custom formatter for breakdown column keys (defaults to license label). */
+  formatColumn?: (key: string) => string;
 };
 
 const RANGES: { label: MessageKey; count: number }[] = [
@@ -93,8 +95,10 @@ export const MonthsView = ({
   months,
   licenses,
   portfolioDates,
+  formatColumn,
 }: MonthsViewProps) => {
   const { t } = useI18n();
+  const columnLabel = formatColumn ?? ((l: string) => licenseLabel(l, t));
   const [range, setRange] = useState<number>(24);
 
   const allMonths = useMemo(() => fillMonths(months), [months]);
@@ -127,7 +131,7 @@ export const MonthsView = ({
         .filter((l) => m.byLicense[l])
         .map((l) => (
           <div key={l} className={chartStyles.tooltipMuted}>
-            {licenseLabel(l, t)}: {formatMoney(m.byLicense[l])}
+            {columnLabel(l)}: {formatMoney(m.byLicense[l])}
           </div>
         ))}
     </>
@@ -267,7 +271,7 @@ export const MonthsView = ({
                   key={l}
                   className={`${styles.table__num} ${styles.table__partnerHead}`}
                 >
-                  <BreakableName name={licenseLabel(l, t)} />
+                  <BreakableName name={columnLabel(l)} />
                 </th>
               ))}
             </tr>

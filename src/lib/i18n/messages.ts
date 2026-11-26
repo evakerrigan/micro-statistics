@@ -1,15 +1,35 @@
 // Interface texts. `{name}` placeholders are filled in by `t()`.
 
 export const en = {
-  'app.title': 'Shutterstock Statistics by Eva',
+  'app.title': 'Microstock Statistics by Eva',
   'footer.author': 'Made by Eva. Questions and ideas:',
-  'footer.disclaimer': 'Not affiliated with Shutterstock.',
+  'footer.disclaimer':
+    'Not affiliated with Shutterstock, Adobe Stock, or iStock.',
   'footer.version': 'Version {version} · {date}',
   'common.scrollTop': 'Back to top',
   'common.cancel': 'Cancel',
   'theme.toDark': 'Dark theme',
   'theme.toLight': 'Light theme',
   'language.switch': 'Switch to Russian',
+
+  'nav.label': 'Microstocks',
+  'nav.all': 'All',
+  'stock.adobe': 'Adobe Stock',
+  'stock.shutterstock': 'Shutterstock',
+  'stock.istock': 'iStock',
+
+  'adobe.comingSoon':
+    'Adobe Stock support (contributor.stock.adobe.com) will be added next.',
+  'istock.comingSoon': 'iStock support will be added in a future update.',
+
+  'all.stocksTitle': 'Microstocks',
+  'all.notSynced': 'Not loaded',
+  'all.comingSoon': 'Coming soon',
+  'all.openToSync': 'Open this tab to load your data',
+  'all.soonHint': 'Support coming soon',
+  'all.stockSummary': '{sales} downloads · {sold} of {total} files sold',
+  'all.empty':
+    'No data loaded yet. Open the Shutterstock tab to load your statistics.',
 
   'sync.quick': 'Update data',
   'sync.first': 'Load data',
@@ -170,10 +190,14 @@ export const en = {
   'sort.asc': 'Ascending',
   'sort.desc': 'Descending',
 
+  'data.deleteStock': 'Delete stock data',
+  'data.deleteStockTitle': 'Delete stock data?',
+  'data.deleteStockBody':
+    'All downloaded sales, cache, your own shoots, renames and joins for this microstock will be removed from this browser. Your account is not affected.',
   'data.deleteAll': 'Delete all data',
   'data.deleteTitle': 'Delete all data?',
   'data.deleteBody':
-    'All downloaded sales, cache, your own shoots, renames and joins, and the theme and language choice will be removed from this browser. Your Shutterstock account is not affected. You can load the data again at any time.',
+    'All downloaded sales across all microstocks, cache, your own shoots, renames and joins, and the theme and language choice will be removed from this browser. Your accounts are not affected. You can load the data again at any time.',
   'data.delete': 'Delete everything',
 } as const;
 
@@ -181,15 +205,34 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 export const ru: Messages = {
-  'app.title': 'Статистика Shutterstock от Евы',
+  'app.title': 'Статистика по микростокам от Евы',
   'footer.author': 'Автор — Ева. Вопросы и предложения:',
-  'footer.disclaimer': 'Не связано с Shutterstock.',
+  'footer.disclaimer': 'Не связано с Shutterstock, Adobe Stock и iStock.',
   'footer.version': 'Версия {version} · {date}',
   'common.scrollTop': 'Наверх',
   'common.cancel': 'Отмена',
   'theme.toDark': 'Тёмная тема',
   'theme.toLight': 'Светлая тема',
   'language.switch': 'Переключить на английский',
+
+  'nav.label': 'Микростоки',
+  'nav.all': 'Все',
+  'stock.adobe': 'Adobe Stock',
+  'stock.shutterstock': 'Shutterstock',
+  'stock.istock': 'iStock',
+
+  'adobe.comingSoon':
+    'Поддержка Adobe Stock (contributor.stock.adobe.com) будет добавлена следующим шагом.',
+  'istock.comingSoon': 'Поддержка iStock появится в следующих обновлениях.',
+
+  'all.stocksTitle': 'Микростоки',
+  'all.notSynced': 'Не загружено',
+  'all.comingSoon': 'Скоро',
+  'all.openToSync': 'Откройте эту вкладку, чтобы загрузить данные',
+  'all.soonHint': 'Поддержка скоро появится',
+  'all.stockSummary': '{sales} загр. · продано {sold} из {total} файлов',
+  'all.empty':
+    'Данных пока нет. Откройте вкладку Shutterstock, чтобы загрузить статистику.',
 
   'sync.quick': 'Обновить данные',
   'sync.first': 'Загрузить данные',
@@ -353,9 +396,13 @@ export const ru: Messages = {
   'sort.asc': 'По возрастанию',
   'sort.desc': 'По убыванию',
 
+  'data.deleteStock': 'Удалить данные этого стока',
+  'data.deleteStockTitle': 'Удалить данные этого стока?',
+  'data.deleteStockBody':
+    'Из этого браузера удалятся все скачанные продажи, кэш, свои съёмки, переименования и объединения для этого микростока. Аккаунт не затрагивается.',
   'data.deleteAll': 'Удалить все данные',
   'data.deleteTitle': 'Удалить все данные?',
   'data.deleteBody':
-    'Из этого браузера удалятся все скачанные продажи, кэш, ваши свои съёмки, переименования и объединения, а также выбор темы и языка. Аккаунт на Shutterstock не затрагивается. Данные можно загрузить заново в любой момент.',
+    'Из этого браузера удалятся все скачанные продажи по всем микростокам, кэш, свои съёмки, переименования и объединения, а также выбор темы и языка. Аккаунты не затрагиваются. Данные можно загрузить заново в любой момент.',
   'data.delete': 'Удалить всё',
 };

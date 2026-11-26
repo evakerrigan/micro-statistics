@@ -1,13 +1,18 @@
 import { useCallback } from 'react';
 import { loadShootMerges, saveShootMerges } from '@/lib/storage';
-import type { ShootMerges } from '@/types/shutterstock';
+import type { ShootMerges, StockId } from '@/types/stock';
 import { useStoredState } from './use-stored-state';
 
 const EMPTY: ShootMerges = {};
 
-/** Shoots the user joined together, persisted in extension storage. */
-export const useShootMerges = () => {
-  const state = useStoredState(loadShootMerges, saveShootMerges, EMPTY);
+/** Shoots the user joined together, persisted in extension storage per stock. */
+export const useShootMerges = (stock: StockId = 'shutterstock') => {
+  const load = useCallback(() => loadShootMerges(stock), [stock]);
+  const save = useCallback(
+    (merges: ShootMerges) => saveShootMerges(merges, stock),
+    [stock]
+  );
+  const state = useStoredState(load, save, EMPTY);
   const { update } = state;
 
   /** Joins `source` (and anything already joined to it) into `target`. */

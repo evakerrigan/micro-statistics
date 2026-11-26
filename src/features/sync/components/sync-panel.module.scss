@@ -5,13 +5,23 @@
 
   &__row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: $spacing-md;
     flex-wrap: wrap;
   }
 
-  // Buttons with the last-update time right under them.
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__title {
+    font-size: 1.35rem;
+    margin: 0;
+  }
+
   &__controls {
     display: flex;
     flex-direction: column;
@@ -26,17 +36,13 @@
     flex-wrap: wrap;
   }
 
-  &__title {
-    font-size: 1.75rem;
-    margin: 0 0 $spacing-xs 0;
-  }
-
   &__meta {
     color: $color-text-secondary;
     margin: 0;
+    font-size: 13px;
   }
 
-  // «updated / date» next to the buttons, on two lines.
+  // «updated / date» next to the button, on two lines.
   &__updated {
     display: flex;
     flex-direction: column;

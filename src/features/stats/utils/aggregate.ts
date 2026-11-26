@@ -12,6 +12,8 @@ import type {
 export type LicenseTotals = Record<string, number>;
 
 export type PhotoStat = {
+  /** Optional disambiguated key when combining assets across multiple stocks. */
+  uid?: string;
   product: Product;
   /** {@link ShootStat.key} of the shoot this file belongs to. */
   shootKey: string | null;

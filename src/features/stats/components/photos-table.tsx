@@ -196,7 +196,7 @@ export const PhotosTable = ({ photos, shoots, licenses }: PhotosTableProps) => {
                 </tr>
               )}
               {sorted.map((photo) => (
-                <tr key={photo.product.id}>
+                <tr key={photo.uid ?? photo.product.id}>
                   <td className={styles.table__pinned}>
                     <img
                       src={photo.product.thumbUrl}

@@ -1,5 +1,5 @@
 // Packs the built extension (`dist/`) into a zip for the Chrome Web Store:
-// release/contributor-stats-for-shutterstock-<version>.zip
+// release/microstock-statistics-<version>.zip
 //
 // A minimal zip writer (deflate, no dependencies); run after `vite build`.
 import {
@@ -72,6 +72,6 @@ end.writeUInt32LE(centralSize, 12);
 end.writeUInt32LE(offset, 16);
 
 mkdirSync(OUT_DIR, { recursive: true });
-const out = join(OUT_DIR, `contributor-stats-for-shutterstock-${version}.zip`);
+const out = join(OUT_DIR, `microstock-statistics-${version}.zip`);
 writeFileSync(out, Buffer.concat([...local, ...central, end]));
 console.log(`Packed ${files.length} files into ${out}`);

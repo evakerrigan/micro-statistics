@@ -1,19 +1,23 @@
+import { useCallback } from 'react';
 import { loadHiddenChartYears, saveHiddenChartYears } from '@/lib/storage';
-import type { HiddenChartYears } from '@/types/shutterstock';
+import type { HiddenChartYears, StockId } from '@/types/stock';
 import { useStoredState } from './use-stored-state';
 
 const EMPTY: HiddenChartYears = {};
 
 /**
  * Years switched off in the “By upload year” charts, persisted in extension
- * storage so they stay off after leaving the page.
+ * storage per page so they stay off after leaving the page.
  */
-export const useHiddenChartYears = () => {
-  const { value, ready, update } = useStoredState(
-    loadHiddenChartYears,
-    saveHiddenChartYears,
-    EMPTY
+export const useHiddenChartYears = (
+  scope: StockId | 'all' = 'shutterstock'
+) => {
+  const load = useCallback(() => loadHiddenChartYears(scope), [scope]);
+  const save = useCallback(
+    (hidden: HiddenChartYears) => saveHiddenChartYears(hidden, scope),
+    [scope]
   );
+  const { value, ready, update } = useStoredState(load, save, EMPTY);
   const toggle = (chart: string, year: string) =>
     update((current) => {
       const years = current[chart] ?? [];

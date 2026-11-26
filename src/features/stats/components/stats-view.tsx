@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useI18n } from '@/hooks/use-i18n';
 import type { MessageKey } from '@/lib/i18n';
-import type { Dataset } from '@/types/shutterstock';
+import type { Dataset, StockId } from '@/types/stock';
 import { formatMoney, formatPercent } from '@/utils/format';
 import { useManualShoots } from '../hooks/use-manual-shoots';
 import { useShootMerges } from '../hooks/use-shoot-merges';
@@ -15,6 +15,7 @@ import styles from './stats-view.module.scss';
 import { YearsView } from './years-view';
 
 type StatsViewProps = {
+  stock?: StockId;
   dataset: Dataset;
 };
 
@@ -30,12 +31,15 @@ const TABS: {
 
 type TabId = (typeof TABS)[number]['id'];
 
-export const StatsView = ({ dataset }: StatsViewProps) => {
+export const StatsView = ({
+  stock = 'shutterstock',
+  dataset,
+}: StatsViewProps) => {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabId>('shoots');
-  const manual = useManualShoots();
-  const merges = useShootMerges();
-  const shootNames = useShootNames();
+  const manual = useManualShoots(stock);
+  const merges = useShootMerges(stock);
+  const shootNames = useShootNames(stock);
   const stats = useMemo(
     () => buildStats(dataset, manual.value, merges.value, shootNames.value),
     [dataset, manual.value, merges.value, shootNames.value]
@@ -186,7 +190,7 @@ export const StatsView = ({ dataset }: StatsViewProps) => {
           portfolioDates={stats.portfolioDates}
         />
       )}
-      {tab === 'years' && <YearsView shoots={stats.shoots} />}
+      {tab === 'years' && <YearsView shoots={stats.shoots} scope={stock} />}
     </div>
   );
 };

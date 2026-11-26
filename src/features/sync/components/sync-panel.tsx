@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { LanguageToggle } from '@/components/ui/language-toggle';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useI18n } from '@/hooks/use-i18n';
 import type { Translate } from '@/lib/i18n';
 import {
@@ -11,7 +9,7 @@ import {
   ShutterstockHttpError,
 } from '@/lib/shutterstock-client';
 import { saveDataset } from '@/lib/storage';
-import type { Dataset } from '@/types/shutterstock';
+import type { Dataset } from '@/types/stock';
 import { formatDate, formatTime } from '@/utils/format';
 import { collectDataset, type SyncProgress } from '../collect';
 import styles from './sync-panel.module.scss';
@@ -57,7 +55,7 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
     setError(null);
     try {
       const next = await collectDataset(setProgress, dataset);
-      await saveDataset(next);
+      await saveDataset(next, 'shutterstock');
       onSynced(next);
     } catch (e) {
       setError(e);
@@ -76,11 +74,14 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
   return (
     <section className={styles.syncPanel}>
       <div className={styles.syncPanel__row}>
-        <h1 className={styles.syncPanel__title}>{t('app.title')}</h1>
+        <div className={styles.syncPanel__heading}>
+          <h2 className={styles.syncPanel__title}>{t('stock.shutterstock')}</h2>
+          {!syncedAt && (
+            <p className={styles.syncPanel__meta}>{t('sync.noData')}</p>
+          )}
+        </div>
         <div className={styles.syncPanel__controls}>
           <div className={styles.syncPanel__actions}>
-            <LanguageToggle />
-            <ThemeToggle />
             <Button onClick={handleSync} disabled={!!progress || !canSync}>
               {progress
                 ? t('sync.loading')
@@ -101,9 +102,6 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
               </div>
             )}
           </div>
-          {!syncedAt && (
-            <p className={styles.syncPanel__meta}>{t('sync.noData')}</p>
-          )}
         </div>
       </div>
       {!canSync && (

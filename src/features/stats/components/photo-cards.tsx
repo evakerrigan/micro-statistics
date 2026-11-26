@@ -56,7 +56,10 @@ export const PhotoCards = ({
       )}
       <div className={cardStyles.cards}>
         {photos.map((photo) => (
-          <article key={photo.product.id} className={cardStyles.card}>
+          <article
+            key={photo.uid ?? photo.product.id}
+            className={cardStyles.card}
+          >
             <div className={cardStyles.card__head}>
               <img
                 src={photo.product.thumbUrl}

@@ -1,7 +1,10 @@
-import { createHashRouter } from 'react-router-dom';
+import { createHashRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layouts/app-layout';
-import { DashboardRoute } from './routes/dashboard';
+import { AdobeRoute } from './routes/adobe';
+import { AllRoute } from './routes/all';
+import { IstockRoute } from './routes/istock';
 import { NotFoundRoute } from './routes/not-found';
+import { ShutterstockRoute } from './routes/shutterstock';
 
 // Hash routing: the extension page is served as a file
 // (chrome-extension://<id>/index.html), so there is no server-side fallback.
@@ -12,7 +15,23 @@ export const router = createHashRouter([
     children: [
       {
         index: true,
-        element: <DashboardRoute />,
+        element: <Navigate to="/shutterstock" replace />,
+      },
+      {
+        path: 'adobe',
+        element: <AdobeRoute />,
+      },
+      {
+        path: 'shutterstock',
+        element: <ShutterstockRoute />,
+      },
+      {
+        path: 'istock',
+        element: <IstockRoute />,
+      },
+      {
+        path: 'all',
+        element: <AllRoute />,
       },
       {
         path: '*',

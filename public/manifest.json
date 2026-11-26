@@ -6,16 +6,16 @@
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "icons": {
-    "16": "icons/shutterstock-16.png",
-    "32": "icons/shutterstock-32.png",
-    "48": "icons/shutterstock-48.png",
-    "128": "icons/shutterstock-128.png"
+    "16": "icons/microstock-16.png",
+    "32": "icons/microstock-32.png",
+    "48": "icons/microstock-48.png",
+    "128": "icons/microstock-128.png"
   },
   "action": {
     "default_title": "__MSG_extName__",
     "default_icon": {
-      "16": "icons/shutterstock-16.png",
-      "32": "icons/shutterstock-32.png"
+      "16": "icons/microstock-16.png",
+      "32": "icons/microstock-32.png"
     }
   },
   "background": {

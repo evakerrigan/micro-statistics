@@ -1,11 +1,11 @@
 {
   "extName": {
-    "message": "Статистика продаж для авторов Shutterstock"
+    "message": "Статистика по микростокам"
   },
   "extShortName": {
-    "message": "Shutterstock Stats"
+    "message": "Microstock Stats"
   },
   "extDescription": {
-    "message": "Статистика продаж для авторов Shutterstock: доход по файлам, съёмкам, месяцам и типам лицензий. Не связано с Shutterstock."
+    "message": "Статистика продаж для авторов микростоков (Shutterstock, Adobe Stock, iStock): доход по файлам, съёмкам, месяцам и лицензиям."
   }
 }
