@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { loadShootMerges, saveShootMerges } from '@/lib/storage';
-import type { ShootMerges } from '@/types/westend';
+import type { ShootMerges } from '@/types/shutterstock';
 import { useStoredState } from './use-stored-state';
 
 const EMPTY: ShootMerges = {};

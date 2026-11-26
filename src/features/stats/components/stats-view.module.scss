@@ -48,6 +48,13 @@
     font-weight: 400;
     color: $color-text-muted;
   }
+
+  &__sub {
+    margin-top: 2px;
+    font-size: 11px;
+    color: $color-text-muted;
+    white-space: nowrap;
+  }
 }
 
 // Compact layout below 1024px: smaller tiles, closer together.

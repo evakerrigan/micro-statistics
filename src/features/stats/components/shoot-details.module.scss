@@ -137,6 +137,20 @@
   &__link {
     color: $color-chart;
   }
+
+  &__badge {
+    position: absolute;
+    top: $spacing-md;
+    right: $spacing-md;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    pointer-events: none;
+  }
 }
 
 .cardUnsold {

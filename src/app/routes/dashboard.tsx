@@ -3,7 +3,7 @@ import { StatsView } from '@/features/stats';
 import { ClearData, SyncPanel } from '@/features/sync';
 import { useI18n } from '@/hooks/use-i18n';
 import { loadDataset } from '@/lib/storage';
-import type { Dataset } from '@/types/westend';
+import type { Dataset } from '@/types/shutterstock';
 import styles from './dashboard.module.scss';
 
 export const DashboardRoute = () => {

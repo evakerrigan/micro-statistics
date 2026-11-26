@@ -1,9 +1,16 @@
 @use '../../../styles/variables' as *;
 
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+}
+
 .search {
   width: 100%;
   max-width: 420px;
-  margin-bottom: $spacing-md;
   padding: 10px 12px;
   font: inherit;
   border: 1px solid $color-border;
@@ -14,6 +21,43 @@
     outline: 2px solid $color-chart;
     outline-offset: -1px;
   }
+}
+
+.filters {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.filter {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid $color-border !important;
+  background: $color-surface !important;
+  color: $color-text-secondary;
+  font-size: 12px;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.filterActive {
+  background: $color-accent !important;
+  border-color: $color-accent !important;
+  color: $color-accent-text !important;
+}
+
+.videoBadge {
+  display: inline-block;
+  margin-left: $spacing-sm;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: $color-row-hover;
+  border: 1px solid $color-border;
+  font-size: 11px;
+  font-weight: 600;
+  color: $color-text-secondary;
+  vertical-align: middle;
 }
 
 .photoCell {

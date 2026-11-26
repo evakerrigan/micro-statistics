@@ -1,6 +1,6 @@
-import type { ManualShoot } from '@/types/westend';
+import type { ManualShoot } from '@/types/shutterstock';
 
-// Pure updates for the user's hand-made shoots. An image belongs to at most
+// Pure updates for the user's hand-made shoots. An asset belongs to at most
 // one manual shoot, so adding it somewhere removes it everywhere else.
 
 const without = (shoots: ManualShoot[], productIds: string[]) => {

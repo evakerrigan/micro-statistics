@@ -5,64 +5,52 @@ import type {
   Product,
   Sale,
   ShootMerges,
+  ShootNames,
   ShootPhoto,
-} from '@/types/westend';
+} from '@/types/shutterstock';
 
-export type PartnerTotals = Record<string, number>;
+export type LicenseTotals = Record<string, number>;
 
 export type PhotoStat = {
   product: Product;
-  /** {@link ShootStat.key} of the shoot this image belongs to. */
+  /** {@link ShootStat.key} of the shoot this file belongs to. */
   shootKey: string | null;
   sales: Sale[];
+  salesCount: number;
   revenue: number;
   lastSale: string | null;
-  byPartner: PartnerTotals;
+  byLicense: LicenseTotals;
 };
 
 /**
- * - `westend`: a submission synced from Westend61
+ * - `shutterstock`: an automatic shoot grouped by upload date
  * - `manual`: a shoot the user created by hand
- * - `unmatched`: images that belong to no shoot yet
+ * - `unmatched`: files without an upload date
  */
-export type ShootKind = 'westend' | 'manual' | 'unmatched';
+export type ShootKind = 'shutterstock' | 'manual' | 'unmatched';
 
 export type ShootStat = {
   key: string;
   kind: ShootKind;
-  /** Submission number as Westend61 shows it (`westend` only). */
-  westendNumber: number | null;
-  /** Westend61's processing state, e.g. `WITHDRAWN` (`westend` only). */
-  westendState: string | null;
-  /** {@link ManualShoot.id} (`manual` only). */
   manualId: string | null;
   title: string;
-  /** Westend61 shows no creation date: always `null` for now. */
-  createdAt: string | null;
-  /** “Last Updated” of the submission (`westend` only). */
-  updatedAt: string | null;
-  /**
-   * Creation order of the submission (`westend` only): numbers grow as
-   * submissions are created, and the new system's come after the old one's.
-   */
-  order: number | null;
-  /**
-   * When the shoot went on sale: the earliest (estimated) go-live date of
-   * its images.
-   */
+  customTitle: string | null;
+  /** Upload date `YYYY-MM-DD` for upload-date shoots. */
+  uploadedAt: string | null;
+  /** Earliest upload date among this shoot's files. */
   publishedAt: string | null;
-  /** Images of the shoot; unknown without the portfolio for own shoots. */
+  /** Files in the shoot (photos + videos). */
   publishedCount: number | null;
   thumbUrl: string | null;
-  /** Images with at least one sale. */
+  /** Files with at least one sale. */
   photos: PhotoStat[];
-  /** Images with no sales. */
+  /** Files with no sales. */
   unsoldPhotos: ShootPhoto[];
   salesCount: number;
   revenue: number;
   revenuePerPhoto: number | null;
   lastSale: string | null;
-  byPartner: PartnerTotals;
+  byLicense: LicenseTotals;
   /** Shoots the user joined into this one. */
   mergedFrom: { key: string; title: string }[];
 };
@@ -72,53 +60,48 @@ export type MonthStat = {
   key: string;
   revenue: number;
   salesCount: number;
-  byPartner: PartnerTotals;
+  byLicense: LicenseTotals;
 };
 
 export type Stats = {
   revenue: number;
   salesCount: number;
   soldPhotos: number;
-  /** Images online, from the dashboard. */
+  /** Files live in the marketplace (photos + videos). */
   publishedPhotos: number;
-  /** Revenue per image that sold at least once. */
+  photoCount: number;
+  videoCount: number;
+  /** Revenue per file that sold at least once. */
   revenuePerSoldPhoto: number | null;
-  /** Revenue per image in the whole portfolio. */
+  /** Revenue per file in the whole portfolio. */
   revenuePerPortfolioPhoto: number | null;
-  partners: string[];
+  /** All license/earnings categories sorted by revenue. */
+  licenses: string[];
+  /** Asset-level license types that sold in `photos`/`shoots`. */
+  assetLicenses: string[];
   photos: PhotoStat[];
   shoots: ShootStat[];
   months: MonthStat[];
-  /** Sales that Westend61 lists without an image. */
+  /** Earnings not tied to a single asset in daily stats. */
   otherRevenue: number;
-  /** Lifetime image earnings as on the dashboard. */
-  westendTotal: number;
-  /** Go-live dates of the images in the portfolio, oldest first. */
+  /** Lifetime earnings as reported by Shutterstock's earnings summary. */
+  shutterstockTotal: number;
+  /** Upload dates of the portfolio files, oldest first. */
   portfolioDates: string[];
 };
 
-/** Partner key for sales without one; shown translated in the UI. */
-export const UNKNOWN_PARTNER = 'other';
+/** License key for sales without one; shown translated in the UI. */
+export const UNKNOWN_LICENSE = 'other';
 export const UNMATCHED_KEY = 'unmatched';
 
-/** Shoot key of a submission, from {@link Shoot.id} (`old:58251`). */
-/** Puts every submission of the new system after all of the old one. */
-const NEW_SYSTEM_ORDER = 1_000_000_000;
-
-/**
- * Sort key for “Updated”: the submission's “Last Updated” date, then its
- * creation order for equal or unknown dates.
- */
-export const updatedSortKey = (s: ShootStat) =>
-  `${s.updatedAt ?? ''}#${String(s.order ?? 0).padStart(12, '0')}`;
-
-export const westendShootKey = (id: string) => `westend:${id}`;
+export const shutterstockShootKey = (id: string) => `shutterstock:${id}`;
 export const manualShootKey = (id: string) => `manual:${id}`;
 
-const round = (n: number) => Math.round(n * 100) / 100;
-const partnerOf = (sale: Sale) => sale.partner ?? UNKNOWN_PARTNER;
+const round = (n: number) => Math.round(n * 10000) / 10000;
+const licenseOf = (sale: Sale) => sale.license ?? UNKNOWN_LICENSE;
+export const saleCountOf = (sale: Sale) => sale.count ?? 1;
 
-const addTo = (totals: PartnerTotals, key: string, amount: number) => {
+const addTo = (totals: LicenseTotals, key: string, amount: number) => {
   totals[key] = round((totals[key] ?? 0) + amount);
 };
 
@@ -131,12 +114,16 @@ const earliest = (dates: (string | null)[]) =>
     null
   );
 
-/** `EVKF00130` before `EVKF00200`: image IDs in upload order. */
-export const compareImageIds = (a: string, b: string) =>
+/** Numeric ID comparison in upload order (`900000000` before `1981940708`). */
+export const compareAssetIds = (a: string, b: string) =>
   a.localeCompare(b, undefined, { numeric: true });
 
-/** Only Westend61 shoots can be joined; hand-made ones are edited directly. */
-export const isMergeable = (shoot: ShootStat) => shoot.kind === 'westend';
+/** Only automatic upload-date shoots can be joined; own shoots are edited directly. */
+export const isMergeable = (shoot: ShootStat) => shoot.kind === 'shutterstock';
+
+/** Sort key for “Uploaded”: shoot's upload date or earliest file upload date. */
+export const uploadedSortKey = (s: ShootStat) =>
+  s.uploadedAt ?? s.publishedAt ?? '';
 
 /** Follows merge links to the shoot that finally takes in `key`. */
 const resolveMerge = (
@@ -150,7 +137,6 @@ const resolveMerge = (
     if (!next || !existing.has(next)) return path[path.length - 1];
     const loopStart = path.indexOf(next);
     if (loopStart >= 0) {
-      // A loop of merges: settle on one member, the same from any start.
       return [...path.slice(loopStart)].sort()[0];
     }
     path.push(next);
@@ -162,10 +148,10 @@ const combineShoots = (target: ShootStat, sources: ShootStat[]): ShootStat => {
   const photos = all
     .flatMap((s) => s.photos)
     .sort((a, b) => b.revenue - a.revenue);
-  const byPartner: PartnerTotals = {};
+  const byLicense: LicenseTotals = {};
   for (const shoot of all) {
-    for (const [partner, amount] of Object.entries(shoot.byPartner)) {
-      addTo(byPartner, partner, amount);
+    for (const [license, amount] of Object.entries(shoot.byLicense)) {
+      addTo(byLicense, license, amount);
     }
   }
   const revenue = round(all.reduce((sum, s) => sum + s.revenue, 0));
@@ -174,11 +160,7 @@ const combineShoots = (target: ShootStat, sources: ShootStat[]): ShootStat => {
     : null;
   return {
     ...target,
-    createdAt: earliest(all.map((s) => s.createdAt)),
-    updatedAt: all.reduce<string | null>(
-      (d, s) => latest(d, s.updatedAt),
-      null
-    ),
+    uploadedAt: earliest(all.map((s) => s.uploadedAt)),
     publishedAt: earliest(all.map((s) => s.publishedAt)),
     publishedCount,
     thumbUrl: photos[0]?.product.thumbUrl ?? target.thumbUrl,
@@ -188,8 +170,11 @@ const combineShoots = (target: ShootStat, sources: ShootStat[]): ShootStat => {
     revenue,
     revenuePerPhoto: publishedCount ? round(revenue / publishedCount) : null,
     lastSale: all.reduce<string | null>((d, s) => latest(d, s.lastSale), null),
-    byPartner,
-    mergedFrom: sources.map((s) => ({ key: s.key, title: s.title })),
+    byLicense,
+    mergedFrom: sources.map((s) => ({
+      key: s.key,
+      title: s.customTitle ?? s.title,
+    })),
   };
 };
 
@@ -216,6 +201,8 @@ const foldMerges = (shoots: ShootStat[], merges: ShootMerges) => {
 
 const portfolioToShootPhoto = (item: PortfolioItem): ShootPhoto => ({
   id: item.id,
+  mediaType: item.mediaType,
+  isIllustration: item.isIllustration,
   headline: item.headline,
   publishedAt: item.createdAt,
   thumbUrl: item.thumbUrl,
@@ -224,18 +211,17 @@ const portfolioToShootPhoto = (item: PortfolioItem): ShootPhoto => ({
 export const buildStats = (
   dataset: Dataset,
   manualShoots: ManualShoot[] = [],
-  shootMerges: ShootMerges = {}
+  shootMerges: ShootMerges = {},
+  shootNames: ShootNames = {}
 ): Stats => {
   const portfolioById = new Map(dataset.portfolio.map((p) => [p.id, p]));
-  // A withdrawn submission never went on sale: not a shoot. (Data synced
-  // before they were skipped may still hold some.)
-  const submissions = dataset.shoots.filter((s) => s.state !== 'WITHDRAWN');
 
-  // Priority: the user's manual assignment, then the submissions.
+  // Priority: the user's manual assignment, then upload-date shoots.
   const shootKeyOf = new Map<string, string>();
-  for (const shoot of submissions) {
+  for (const shoot of dataset.shoots) {
+    const key = shutterstockShootKey(shoot.id);
     for (const id of shoot.photoIds) {
-      shootKeyOf.set(id, westendShootKey(shoot.id));
+      shootKeyOf.set(id, key);
     }
   }
   for (const manual of manualShoots) {
@@ -244,10 +230,15 @@ export const buildStats = (
     }
   }
 
+  const assetLicenseTotals: LicenseTotals = {};
   const photos: PhotoStat[] = dataset.products.map((product) => {
-    const byPartner: PartnerTotals = {};
+    const byLicense: LicenseTotals = {};
+    let salesCount = 0;
     for (const sale of product.sales) {
-      addTo(byPartner, partnerOf(sale), sale.amount);
+      const lic = licenseOf(sale);
+      addTo(byLicense, lic, sale.amount);
+      addTo(assetLicenseTotals, lic, sale.amount);
+      salesCount += saleCountOf(sale);
     }
     return {
       product: {
@@ -257,43 +248,40 @@ export const buildStats = (
       },
       shootKey: shootKeyOf.get(product.id) ?? null,
       sales: product.sales,
+      salesCount,
       revenue: round(product.sales.reduce((sum, s) => sum + s.amount, 0)),
       lastSale: product.sales.reduce<string | null>(
         (d, s) => latest(d, s.date),
         null
       ),
-      byPartner,
+      byLicense,
     };
   });
   photos.sort((a, b) => b.revenue - a.revenue);
   const soldIds = new Set(photos.map((p) => p.product.id));
 
-  // Shoots
   type ShootBase = Pick<
     ShootStat,
     | 'key'
     | 'kind'
-    | 'westendNumber'
-    | 'westendState'
     | 'manualId'
     | 'title'
-    | 'createdAt'
-    | 'updatedAt'
-    | 'order'
+    | 'customTitle'
+    | 'uploadedAt'
     | 'publishedAt'
     | 'publishedCount'
     | 'unsoldPhotos'
   >;
 
   const makeShoot = (base: ShootBase, shootPhotos: PhotoStat[]): ShootStat => {
-    const byPartner: PartnerTotals = {};
+    const byLicense: LicenseTotals = {};
     let salesCount = 0;
     let lastSale: string | null = null;
     for (const photo of shootPhotos) {
-      salesCount += photo.sales.length;
+      salesCount += photo.salesCount;
       lastSale = latest(lastSale, photo.lastSale);
-      for (const [partner, amount] of Object.entries(photo.byPartner)) {
-        addTo(byPartner, partner, amount);
+      for (const [license, amount] of Object.entries(photo.byLicense)) {
+        addTo(byLicense, license, amount);
       }
     }
     const revenue = round(shootPhotos.reduce((sum, p) => sum + p.revenue, 0));
@@ -313,7 +301,7 @@ export const buildStats = (
         ? round(revenue / base.publishedCount)
         : null,
       lastSale,
-      byPartner,
+      byLicense,
       mergedFrom: [],
     };
   };
@@ -321,44 +309,30 @@ export const buildStats = (
   const photosOf = (key: string | null) =>
     photos.filter((p) => p.shootKey === key);
 
-  // An image is online when it is in the portfolio. Without a complete
-  // portfolio (it failed to load in full) that can't be told, so every image
-  // with an ID counts as published.
-  const portfolioComplete =
-    dataset.portfolio.length > 0 &&
-    dataset.portfolio.length >= dataset.portfolioSize * 0.95;
-  const isOnline = (id: string) => !portfolioComplete || portfolioById.has(id);
-
-  const shoots = submissions.flatMap((shoot) => {
-    const key = westendShootKey(shoot.id);
-    // Images the user moved into an own shoot are no longer counted here.
+  const shoots = dataset.shoots.flatMap((shoot) => {
+    const key = shutterstockShootKey(shoot.id);
+    // Files the user moved into an own shoot are no longer counted here.
     const ids = shoot.photoIds.filter((id) => shootKeyOf.get(id) === key);
     const shootPhotos = photosOf(key);
-    // Unsold images taken offline since are not part of the shoot any more.
     const unsold = ids
-      .filter((id) => !soldIds.has(id) && isOnline(id))
-      .map((id): ShootPhoto => {
+      .filter((id) => !soldIds.has(id))
+      .flatMap((id): ShootPhoto[] => {
         const item = portfolioById.get(id);
-        return item
-          ? portfolioToShootPhoto(item)
-          : { id, headline: null, publishedAt: null, thumbUrl: null };
+        return item ? [portfolioToShootPhoto(item)] : [];
       });
     const published = shootPhotos.length + unsold.length;
-    // Nothing published (yet): images still in processing, or all of them
-    // moved into own shoots.
     if (!published) return [];
+    const customTitle = shootNames[key] ?? null;
     return makeShoot(
       {
         key,
-        kind: 'westend',
-        westendNumber: shoot.number,
-        updatedAt: shoot.updatedAt ?? null,
-        order: (shoot.system === 'new' ? NEW_SYSTEM_ORDER : 0) + shoot.number,
-        westendState: shoot.state,
+        kind: 'shutterstock',
         manualId: null,
         title: shoot.title,
-        createdAt: null,
+        customTitle,
+        uploadedAt: shoot.uploadedAt,
         publishedAt: earliest([
+          shoot.uploadedAt,
           ...unsold.map((p) => p.publishedAt),
           ...shootPhotos.map((p) => p.product.createdAt),
         ]),
@@ -368,18 +342,18 @@ export const buildStats = (
       shootPhotos
     );
   });
-  // Unsold portfolio images outside the submissions: they belong to a
-  // manual shoot or to «No shoot», so all of them can be grouped by hand.
+
+  // Unsold portfolio files outside upload-date shoots: belong to a manual
+  // shoot or to «No shoot».
   const unsoldByKey = new Map<string | null, ShootPhoto[]>();
   for (const item of dataset.portfolio) {
     const key = shootKeyOf.get(item.id) ?? null;
-    if (soldIds.has(item.id) || key?.startsWith('westend:')) continue;
+    if (soldIds.has(item.id) || key?.startsWith('shutterstock:')) continue;
     unsoldByKey.set(key, [
       ...(unsoldByKey.get(key) ?? []),
       portfolioToShootPhoto(item),
     ]);
   }
-  // Without the portfolio only the sold images of a shoot are known.
   const countOf = (sold: PhotoStat[], unsold: ShootPhoto[]) =>
     dataset.portfolio.length ? sold.length + unsold.length : null;
 
@@ -393,13 +367,10 @@ export const buildStats = (
         {
           key,
           kind: 'manual',
-          westendNumber: null,
-          updatedAt: null,
-          order: null,
-          westendState: null,
           manualId: manual.id,
           title: manual.title,
-          createdAt: null,
+          customTitle: null,
+          uploadedAt: null,
           publishedAt: earliest([
             ...unsold.map((p) => p.publishedAt),
             ...shootPhotos.map((p) => p.product.createdAt),
@@ -411,6 +382,7 @@ export const buildStats = (
       )
     );
   }
+
   const unmatched = photosOf(null);
   const unmatchedUnsold = unsoldByKey.get(null) ?? [];
   if (unmatched.length || unmatchedUnsold.length) {
@@ -419,14 +391,10 @@ export const buildStats = (
         {
           key: UNMATCHED_KEY,
           kind: 'unmatched',
-          westendNumber: null,
-          updatedAt: null,
-          order: null,
-          westendState: null,
           manualId: null,
-          // Shown translated in the UI (see `shoot-labels.ts`).
           title: '',
-          createdAt: null,
+          customTitle: null,
+          uploadedAt: null,
           publishedAt: null,
           publishedCount: countOf(unmatched, unmatchedUnsold),
           unsoldPhotos: unmatchedUnsold,
@@ -435,6 +403,7 @@ export const buildStats = (
       )
     );
   }
+
   const merged = foldMerges(shoots, shootMerges);
   merged.shoots.sort((a, b) => b.revenue - a.revenue);
   const finalPhotos = photos.map((p) =>
@@ -452,21 +421,21 @@ export const buildStats = (
       key,
       revenue: 0,
       salesCount: 0,
-      byPartner: {},
+      byLicense: {},
     };
     month.revenue = round(month.revenue + sale.amount);
-    month.salesCount += 1;
-    addTo(month.byPartner, partnerOf(sale), sale.amount);
+    month.salesCount += saleCountOf(sale);
+    addTo(month.byLicense, licenseOf(sale), sale.amount);
     monthMap.set(key, month);
   }
   const months = [...monthMap.values()].sort((a, b) =>
     a.key.localeCompare(b.key)
   );
 
-  const partnerTotals: PartnerTotals = {};
+  const licenseTotals: LicenseTotals = {};
   for (const m of months) {
-    for (const [partner, amount] of Object.entries(m.byPartner)) {
-      addTo(partnerTotals, partner, amount);
+    for (const [license, amount] of Object.entries(m.byLicense)) {
+      addTo(licenseTotals, license, amount);
     }
   }
 
@@ -474,26 +443,39 @@ export const buildStats = (
     dataset.otherSales.reduce((sum, s) => sum + s.amount, 0)
   );
   const revenue = round(months.reduce((sum, m) => sum + m.revenue, 0));
-  const soldPhotos = photos.filter((p) => p.sales.length).length;
+  const soldPhotos = photos.filter(
+    (p) => p.salesCount > 0 || p.revenue > 0
+  ).length;
   const publishedPhotos = dataset.portfolioSize || dataset.portfolio.length;
+  const photoCount =
+    dataset.photoCount ??
+    dataset.portfolio.filter((p) => p.mediaType === 'photo').length;
+  const videoCount =
+    dataset.videoCount ??
+    dataset.portfolio.filter((p) => p.mediaType === 'video').length;
 
   return {
     revenue,
     salesCount: months.reduce((sum, m) => sum + m.salesCount, 0),
     soldPhotos,
     publishedPhotos,
+    photoCount,
+    videoCount,
     revenuePerSoldPhoto: soldPhotos ? round(revenue / soldPhotos) : null,
     revenuePerPortfolioPhoto: publishedPhotos
       ? round(revenue / publishedPhotos)
       : null,
-    partners: Object.keys(partnerTotals).sort(
-      (a, b) => partnerTotals[b] - partnerTotals[a]
+    licenses: Object.keys(licenseTotals).sort(
+      (a, b) => licenseTotals[b] - licenseTotals[a]
+    ),
+    assetLicenses: Object.keys(assetLicenseTotals).sort(
+      (a, b) => assetLicenseTotals[b] - assetLicenseTotals[a]
     ),
     photos: finalPhotos,
     shoots: merged.shoots,
     months,
     otherRevenue,
-    westendTotal: dataset.westendTotal,
+    shutterstockTotal: dataset.shutterstockTotal,
     portfolioDates: dataset.portfolio
       .flatMap((p) => (p.createdAt ? [p.createdAt] : []))
       .sort(),

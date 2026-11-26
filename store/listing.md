@@ -7,221 +7,109 @@
 
 ### 1. Подготовить архив
 
-1. Проверить версию: `version` в `public/manifest.json` (сейчас `1.0.0`) и
+1. Проверить версию: `version` в `public/manifest.json` (`1.0.0`) и
    `version` в `package.json` должны совпадать.
 2. Собрать архив: `npm run package` →
-   `release/contributor-stats-for-westend61-1.0.0.zip`. Внутри то же, что в
+   `release/contributor-stats-for-shutterstock-1.0.0.zip`. Внутри то же, что в
    `dist/`: `manifest.json` в корне архива, иконки, `_locales/en` и `_locales/ru`.
-3. Последняя проверка: в `chrome://extensions` удалить установленную
-   распакованную версию, нажать **Загрузить распакованное расширение**, выбрать
-   свежую `dist/` и один раз полностью загрузить данные. Убедиться, что нет
-   ошибок на карточке расширения.
-4. Закоммитить всё и запушить в GitHub.
+3. Последняя проверка: в `chrome://extensions` загрузить распакованную `dist/`
+   и один раз полностью загрузить данные. Убедиться, что нет ошибок на карточке
+   расширения.
 
 ### 2. Выложить политику конфиденциальности
 
-Магазин требует ссылку на политику. Файл — `store/privacy-policy.html`
-(английский и русский на одной странице).
-
-Самый простой способ — GitHub Pages в репозитории
-`evakerrigan/westend61-statistics`:
-
-1. GitHub → репозиторий → **Settings** → **Pages**.
-2. **Source:** Deploy from a branch, **Branch:** `master`, папка `/ (root)` → **Save**.
-3. Через 1–2 минуты политика будет по адресу
-   `https://evakerrigan.github.io/westend61-statistics/store/privacy-policy.html`.
-   Открыть ссылку и проверить, что страница видна.
-
-GitHub Pages бесплатно работает только для публичного репозитория. Папки
-`samples/` и `release/` в `.gitignore`, так что личных данных в репозитории нет.
-Если репозиторий должен остаться закрытым — выложить политику туда же, где
-политика Cavan (например, отдельной страницей Google Sites).
-
-### 3. Создать карточку в Developer Dashboard
-
-Аккаунт разработчика уже есть (через него опубликован Cavan), второй взнос
-не нужен.
-
-1. [Developer Dashboard](https://chrome.google.com/webstore/devconsole) →
-   **New item** → загрузить zip из `release/`.
-2. Вкладка **Store listing** — тексты, категория и картинки из разделов ниже.
-   Сначала английская версия, потом в списке языков вверху выбрать **Russian**
-   и заполнить русскую (описание и русские скриншоты).
-3. Вкладка **Privacy** — ответы из раздела «Конфиденциальность».
-4. Вкладка **Distribution**:
-   - **Visibility:** для начала удобно **Unlisted** (страница доступна только
-     по ссылке — можно проверить на себе и дать знакомым фотографам), потом
-     переключить на **Public**.
-   - **Regions:** All regions.
-   - **Payments:** Free.
-5. Вкладка **Test instructions** (для проверяющих) — текст из раздела ниже.
-6. **Submit for review**. Проверка обычно занимает от нескольких дней до пары
-   недель. Расширения с доступом к сайтам (host permissions) проверяют
-   внимательнее, поэтому важно, чтобы обоснования разрешений были понятными.
-
-### 4. После проверки
-
-- Если одобрят — придёт письмо, расширение появится по ссылке (Unlisted) или в
-  поиске (Public). Ссылку можно добавить в README.
-- Если отклонят — в письме будет причина и номер правила. Частые причины:
-  непонятное обоснование разрешения, ссылка на политику не открывается,
-  описание обещает то, чего нет. Исправить и отправить заново.
-
-### 5. Обновления
-
-1. Поднять `version` в `public/manifest.json` и `package.json` (например,
-   `1.0.1`). Магазин не примет архив с той же версией.
-2. `npm run package` → новый zip в `release/`.
-3. Developer Dashboard → расширение → **Package** → **Upload new package** →
-   **Submit for review**.
-4. Если изменились картинки или тексты — обновить их на вкладке
-   **Store listing** в той же отправке.
+Файл — `store/privacy-policy.html` (английский и русский на одной странице).
 
 ## Картинки
 
-| Файл                                      | Куда                               |
-| ----------------------------------------- | ---------------------------------- |
-| `public/icons/westend-128.png`            | Store icon (128×128)               |
-| `store/screenshots/01-overview.png`       | Screenshots (1280×800), по порядку |
-| `store/screenshots/02-shoot-photos.png`   |                                    |
-| `store/screenshots/03-monthly-charts.png` |                                    |
-| `store/screenshots/04-dark-theme.png`     |                                    |
-| `store/screenshots/05-mobile.png`         |                                    |
-| `store/promo-small-440x280.png`           | Small promo tile (440×280)         |
-
-Для русской версии страницы (**Localized screenshots**) — те же пять
-скриншотов с русским интерфейсом в `store/screenshots/ru/`.
-
-Все картинки — PNG без прозрачности (24-bit), как требует магазин.
-
-На скриншотах — фото из твоего портфолио и названия твоих сабмишенов, суммы
-продаж придуманы, партнёры обезличены (Stock1…Stock4).
+| Файл                                | Куда                 |
+| ----------------------------------- | -------------------- |
+| `public/icons/shutterstock-128.png` | Store icon (128×128) |
 
 ## Store listing
 
-**Name:** Contributor Stats for Westend61
+**Name:** Contributor Stats for Shutterstock
 
 **Category:** Productivity → Tools
 
-**Language:** English (основной) и Russian. Русская версия страницы
-появляется в списке языков вверху вкладки **Store listing** после загрузки
-архива: в нём есть `_locales/ru` (название и краткое описание на русском —
-в `public/_locales/ru/messages.json`).
+**Language:** English (основной) и Russian (`public/_locales/ru/messages.json`).
 
-**Русское название:** Статистика продаж для фотографов Westend61
+**Русское название:** Статистика продаж для авторов Shutterstock
 
 ### Summary
 
-Берётся из описания в манифесте (`_locales/*/messages.json`, до 132 символов):
+EN (130):
 
-EN (121):
+> Sales statistics for Shutterstock contributors: earnings by file, shoot, month and license type. Not affiliated with Shutterstock.
 
-> Sales statistics for Westend61 photographers: earnings by photo, shoot, month and partner. Not affiliated with Westend61.
+RU (127):
 
-RU (112):
-
-> Статистика продаж для фотографов Westend61: доход по фото, съёмкам, месяцам и партнёрам. Не связано с Westend61.
+> Статистика продаж для авторов Shutterstock: доход по файлам, съёмкам, месяцам и типам лицензий. Не связано с Shutterstock.
 
 ### Description — EN
 
 ```
-See what every photo and every shoot actually earns you on Westend61.
+See what every photo, video and shoot actually earns you on Shutterstock.
 
-Westend61 lists your licenses one by one. This extension collects all of them from your own photographer account and puts them together:
+Shutterstock shows your earnings across daily summaries and license tabs. This extension collects all of them from your own contributor account and puts them together:
 
-• By shoot — every submission as a shoot: revenue, sales, published and sold photos, revenue per photo, time on sale, split by partner agency. Open a shoot to see its sold photos, and the unsold ones in grey.
-• By photo — every photo that sold, with search and sorting by any column.
-• By year/month — revenue per calendar year, plus revenue and number of sales per month, over the size of your portfolio, to see whether more photos mean more money.
-• By upload year — how the shoots of each year keep selling as they get older.
-• Portfolio overview — total earnings, sales, photos sold, portfolio success (share of photos that sold), average per sold photo and per portfolio photo, earnings by partner.
-
-Photos are linked to shoots automatically from your submissions, in both the current and the previous submission system. You can join a shoot uploaded in several parts and group leftover photos into your own shoots.
+• By shoot — files grouped automatically by upload date (both photos and videos): revenue, downloads, published and sold files, revenue per file, time on sale, split by license type. Rename shoots, join multi-day uploads, or select files to group into your own shoots.
+• By file — every photo, illustration and video that sold, with search, media filter and sorting by any column.
+• By year/month — revenue per calendar year, plus revenue and downloads per month over your portfolio growth, including Contributor Fund and Referrals.
+• By upload year — how the shoots of each upload year keep selling as they get older.
+• Portfolio overview — total earnings, downloads, files sold, portfolio success, average per sold file and per portfolio file, earnings by license type.
 
 English and Russian, light and dark theme, works on narrow screens.
 
-Privacy: everything stays in your browser. The extension talks only to westend61.de using your existing login, has no servers and no tracking, and never sees your password. “Delete all data” removes everything.
+Privacy: everything stays in your browser. The extension talks only to submit.shutterstock.com using your existing login, has no servers and no tracking, and never sees your password. “Delete all data” removes everything.
 
-How to use: log in at westend61.de as a photographer, click the extension icon, then “Load data”. The first load takes about a minute.
+How to use: log in at submit.shutterstock.com as a contributor, click the extension icon, then “Load data”.
 
-This is an independent project and is not affiliated with Westend61.
+This is an independent project and is not affiliated with Shutterstock.
 ```
 
 ### Description — RU
 
 ```
-Узнайте, сколько на самом деле приносит каждое фото и каждая съёмка на Westend61.
+Узнайте, сколько на самом деле приносит каждое фото, видео и съёмка на Shutterstock.
 
-Westend61 показывает продажи списком, лицензия за лицензией. Расширение собирает их все из вашего аккаунта фотографа и сводит вместе:
+Shutterstock показывает начисления в дневных отчётах и по отдельным вкладкам лицензий. Расширение собирает их из вашего аккаунта автора и сводит вместе:
 
-• По съёмкам — каждый сабмишен как съёмка: доход, продажи, опубликованные и проданные фото, доход на одно фото, срок в продаже, разбивка по партнёрским агентствам. Внутри съёмки — проданные фото, а непроданные серым.
-• По фото — все проданные фото с поиском и сортировкой по любой колонке.
-• По годам/месяцам — доход за каждый календарный год, а также доход и число продаж по месяцам на фоне размера портфеля: видно, растёт ли доход вместе с портфелем.
+• По съёмкам — файлы автоматически группируются по дате загрузки (и фото, и видео): доход, загрузки, опубликованные и проданные файлы, доход на один файл, срок в продаже, разбивка по типам лицензий. Съёмки можно переименовывать, объединять между датами или выделять нужные файлы в свои съёмки.
+• По файлам — все проданные фото, иллюстрации и видео с поиском, фильтром по типу медиа и сортировкой по любой колонке.
+• По годам/месяцам — доход за каждый календарный год, а также доход и число загрузок по месяцам на фоне роста портфеля (включая «Средства автора» и «Рекомендации»).
 • По годам загрузки — как продаются съёмки каждого года по мере того, как стареют.
-• Общая статистика — весь доход, продажи, проданные фото, успешность портфеля (доля фото, которые продались), средний доход с проданного фото и на одно фото портфеля, доход по партнёрам.
-
-Фото сами связываются со съёмками по вашим сабмишенам — и в новой, и в старой системе загрузки. Части одной фотосессии можно объединить, а оставшиеся фото собрать в свои съёмки.
+• Общая статистика — весь доход, загрузки, проданные файлы, успешность портфеля, средний доход с проданного файла и на один файл портфеля, доход по типам лицензий.
 
 Английский и русский язык, светлая и тёмная тема, удобно на узких экранах.
 
-Конфиденциальность: всё остаётся в вашем браузере. Расширение обращается только к westend61.de через ваш уже выполненный вход, у него нет серверов и отслеживания, пароль оно не видит. Кнопка «Удалить все данные» стирает всё.
+Конфиденциальность: всё остаётся в вашем браузере. Расширение обращается только к submit.shutterstock.com через ваш уже выполненный вход, у него нет серверов и отслеживания, пароль оно не видит. Кнопка «Удалить все данные» стирает всё.
 
-Как пользоваться: войдите на westend61.de как фотограф, нажмите на значок расширения, затем «Загрузить данные». Первая загрузка занимает около минуты.
+Как пользоваться: войдите на submit.shutterstock.com как автор, нажмите на значок расширения, затем «Загрузить данные».
 
-Это независимый проект, он не связан с Westend61.
+Это независимый проект, он не связан с Shutterstock.
 ```
 
 ## Конфиденциальность (вкладка Privacy)
 
 ### Single purpose
 
-> Shows a Westend61 photographer their own sales statistics — earnings by photo, by shoot, by month and by partner — collected from their logged-in Westend61 account.
+> Shows a Shutterstock contributor their own sales statistics — earnings by photo, video, shoot, month and license type — collected from their logged-in Shutterstock account.
 
 ### Permission justification
 
 **storage:**
 
-> Stores the downloaded sales statistics and the user's own settings (own shoots, joined shoots) locally, so the statistics are available without downloading everything again.
+> Stores the downloaded sales statistics, incremental sync cache and the user's own settings (own shoots, renames, joined shoots) locally, so the statistics are available without downloading everything again.
 
 **unlimitedStorage:**
 
-> Large portfolios (thousands of photos with full sales history) can exceed the default extension storage quota. The data stays on the user's device.
+> Large portfolios (thousands of files with multi-year daily sales history) can exceed the default extension storage quota. The data stays on the user's device.
 
 **scripting:**
 
-> The extension runs requests inside the user's open westend61.de tab (and, for the submission pages, an ingestion.westend61.de / ingestionneo.westend61.de tab) so they use the user's existing Westend61 login, exactly like the Westend61 website itself. No code is injected into any other site.
+> The extension runs requests inside the user's open submit.shutterstock.com tab so they use the user's existing Shutterstock login, exactly like the Shutterstock website itself. No code is injected into any other site.
 
-**Host permissions `https://www.westend61.de/*`, `https://ingestion.westend61.de/*`, `https://ingestionneo.westend61.de/*`:**
+**Host permission `https://submit.shutterstock.com/*`:**
 
-> Westend61 is the only site the extension reads data from: the user's own earnings, dashboard and portfolio on www.westend61.de, and the user's own submissions on Westend61's two submission systems (ingestion.westend61.de — previous submissions, ingestionneo.westend61.de — current submissions). The submissions tell which photos belong to which shoot.
-
-### Remote code
-
-> No, I am not using remote code. (Весь код — в архиве; с Google Fonts загружается только шрифт, это не код.)
-
-### Data usage
-
-Расширение получает данные о продажах и доходе из аккаунта пользователя,
-но хранит их только на устройстве и никуда не передаёт. Чтобы не было
-вопросов на проверке, честнее отметить:
-
-- [x] **Financial and payment information** — суммы продаж и доходов.
-- [x] **Website content** — портфолио и сабмишены с westend61.de.
-
-И все три подтверждения:
-
-- [x] I do not sell or transfer user data to third parties, outside of the approved use cases
-- [x] I do not use or transfer user data for purposes that are unrelated to my item's single purpose
-- [x] I do not use or transfer user data to determine creditworthiness or for lending purposes
-
-**Privacy policy URL:** ссылка на опубликованный `store/privacy-policy.html`
-(см. шаг 2 плана).
-
-## Test instructions (для проверяющих)
-
-Поле **Additional instructions** — до 500 знаков, этот текст 487. Поля
-**Username** и **Password** оставить пустыми: аккаунт с реальными продажами
-не отдаём.
-
-```
-Needs a Westend61 photographer account (a customer account has no sales). 1. Log in at www.westend61.de as a photographer. 2. Click the extension icon. 3. Click "Load data": the extension reads the photographer's own earnings, portfolio and submissions one request at a time (about a minute) and shows the statistics. Without a photographer account it shows: "Make sure you are logged in at westend61.de as a photographer." Store screenshots use demo data. All data stays in the browser.
-```
+> submit.shutterstock.com is the only site the extension reads data from: the user's own contributor earnings, daily sales summaries and published photo/video catalog.

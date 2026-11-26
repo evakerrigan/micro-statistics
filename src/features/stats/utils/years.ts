@@ -1,6 +1,6 @@
-import type { Sale } from '@/types/westend';
+import type { Sale } from '@/types/shutterstock';
 import { monthsSince } from '@/utils/format';
-import type { ShootStat } from './aggregate';
+import { saleCountOf, type ShootStat } from './aggregate';
 
 export type YearStat = {
   /** `YYYY` */
@@ -8,7 +8,7 @@ export type YearStat = {
   shoots: ShootStat[];
   /** Average time on sale of the year's shoots, in whole months. */
   avgMonthsOnSale: number | null;
-  /** Published images; only the sold ones are known for manual shoots. */
+  /** Published files; only the sold ones are known if portfolio wasn't loaded. */
   photoCount: number;
   salesCount: number;
   revenue: number;
@@ -19,7 +19,7 @@ export type YearSalesLine = {
   year: string;
   /** Older upload years joined into one line: «2018 and earlier». */
   folded: boolean;
-  /** Photos in the line's shoots (see {@link YearStat.photoCount}). */
+  /** Files in the line's shoots (see {@link YearStat.photoCount}). */
   photoCount: number;
   /** Sales per calendar year (see {@link YearSales.saleYears}); `null` before the line starts. */
   values: (number | null)[];
@@ -35,17 +35,16 @@ export type YearSales = {
 /** Lines with their own colour; older upload years fold into the first. */
 export const MAX_YEAR_LINES = 8;
 
-const round = (n: number) => Math.round(n * 100) / 100;
+const round = (n: number) => Math.round(n * 10000) / 10000;
 
 /**
  * Shoots grouped by the year they were uploaded, newest year first. Sales
- * and revenue are each shoot's lifetime totals. Manual shoots have no upload
- * date and count from their first published image; «No shoot» is left out.
+ * and revenue are each shoot's lifetime totals. «No shoot» is left out.
  */
 export const buildYears = (shoots: ShootStat[]): YearStat[] => {
   const byYear = new Map<string, ShootStat[]>();
   for (const shoot of shoots) {
-    const date = shoot.createdAt ?? shoot.publishedAt;
+    const date = shoot.uploadedAt ?? shoot.publishedAt;
     if (shoot.kind === 'unmatched' || !date) continue;
     const year = date.slice(0, 4);
     byYear.set(year, [...(byYear.get(year) ?? []), shoot]);
@@ -73,13 +72,13 @@ export const buildYears = (shoots: ShootStat[]): YearStat[] => {
     });
 };
 
-/** What a sale adds to its year: one sale, or its amount. */
-export const countSale = () => 1;
+/** What a sale adds to its year: download count, or its amount. */
+export const countSale = (sale: Sale) => saleCountOf(sale);
 export const saleAmount = (sale: Sale) => sale.amount;
 
 /**
- * How many sales (or how much money, with `measure` = {@link saleAmount}) the
- * shoots of each upload year made in every calendar year, to see how sales
+ * How many downloads (or how much money, with `measure` = {@link saleAmount})
+ * the shoots of each upload year made in every calendar year, to see how sales
  * fade as shoots get older.
  */
 export const buildYearSales = (
@@ -108,8 +107,6 @@ export const buildYearSales = (
         );
       }
     }
-    // A sale can come before the upload year (joined shoots), so the line
-    // starts at whichever is first.
     const start = Math.min(Number(group[0].year), ...bySaleYear.keys());
     return { group, bySaleYear, start };
   });
@@ -132,8 +129,8 @@ export const buildYearSales = (
 };
 
 /**
- * The same sales per 100 photos of each upload year, so years with more or
- * fewer uploads compare fairly. A line without known photos stays empty.
+ * The same downloads per 100 files of each upload year, so years with more or
+ * fewer uploads compare fairly. A line without known files stays empty.
  */
 export const salesPerHundredPhotos = (sales: YearSales): YearSales => ({
   saleYears: sales.saleYears,

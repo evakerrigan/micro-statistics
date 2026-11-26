@@ -5,17 +5,17 @@ import {
   MOBILE_QUERY,
   useMediaQuery,
 } from '@/hooks/use-media-query';
-import type { ManualShoot } from '@/types/westend';
+import type { ManualShoot } from '@/types/shutterstock';
 import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
-import { updatedSortKey, type ShootStat } from '../utils/aggregate';
+import { uploadedSortKey, type ShootStat } from '../utils/aggregate';
 import {
-  isDensePartnerTable,
-  partnerColumnCount,
-} from '../utils/partner-columns';
+  isDenseLicenseTable,
+  licenseColumnCount,
+} from '../utils/license-columns';
 import { shootSubtitle, shootTitle } from '../utils/shoot-labels';
-import { PartnerCells, PartnerHeaders } from './partner-columns';
+import { LicenseCells, LicenseHeaders } from './license-columns';
 import { ShootCards } from './shoot-cards';
 import { ShootDetails } from './shoot-details';
 import { SortHeader, StackedSortHeader } from './sort-header';
@@ -26,20 +26,22 @@ import shootStyles from './shoots-table.module.scss';
 
 type ShootsTableProps = {
   shoots: ShootStat[];
-  partners: string[];
+  licenses: string[];
   manualShoots: ManualShoot[];
   onManualShootsChange: (update: ManualShootsUpdate) => void;
   onMergeShoot: (source: string, target: string) => void;
   onUnmergeShoot: (source: string) => void;
+  onRenameShoot: (key: string, title: string) => void;
 };
 
 export const ShootsTable = ({
   shoots,
-  partners,
+  licenses,
   manualShoots,
   onManualShootsChange,
   onMergeShoot,
   onUnmergeShoot,
+  onRenameShoot,
 }: ShootsTableProps) => {
   const { t } = useI18n();
   const compact = useMediaQuery(COMPACT_QUERY);
@@ -49,7 +51,7 @@ export const ShootsTable = ({
   const accessors = useMemo<SortAccessors<ShootStat>>(
     () => ({
       title: (s) => shootTitle(s, t),
-      createdAt: updatedSortKey,
+      createdAt: uploadedSortKey,
       onSale: (s) =>
         s.publishedAt
           ? Date.now() - new Date(s.publishedAt.slice(0, 10)).getTime()
@@ -60,13 +62,13 @@ export const ShootsTable = ({
       revenue: (s) => s.revenue,
       perPhoto: (s) => s.revenuePerPhoto ?? -1,
       ...Object.fromEntries(
-        partners.map((p) => [
-          `partner:${p}`,
-          (s: ShootStat) => s.byPartner[p] ?? 0,
+        licenses.map((l) => [
+          `license:${l}`,
+          (s: ShootStat) => s.byLicense[l] ?? 0,
         ])
       ),
     }),
-    [partners, t]
+    [licenses, t]
   );
   const { sorted, sortKey, direction, toggle } = useSort(
     shoots,
@@ -74,18 +76,19 @@ export const ShootsTable = ({
     'revenue'
   );
   const header = { sortKey, direction, onSort: toggle };
-  const columnCount = 7 + partnerColumnCount(partners, compact);
+  const columnCount = 7 + licenseColumnCount(licenses, compact);
 
   if (mobile) {
     return (
       <ShootCards
         shoots={sorted}
         allShoots={shoots}
-        partners={partners}
+        licenses={licenses}
         manualShoots={manualShoots}
         onManualShootsChange={onManualShootsChange}
         onMergeShoot={onMergeShoot}
         onUnmergeShoot={onUnmergeShoot}
+        onRenameShoot={onRenameShoot}
         {...header}
       />
     );
@@ -94,7 +97,7 @@ export const ShootsTable = ({
   return (
     <TableWrap>
       <table
-        className={`${styles.table} ${isDensePartnerTable(partners, compact) ? styles.table__dense : ''}`}
+        className={`${styles.table} ${isDenseLicenseTable(licenses, compact) ? styles.table__dense : ''}`}
       >
         <thead>
           <tr>
@@ -105,7 +108,7 @@ export const ShootsTable = ({
             <SortHeader label={t('col.shoot')} columnKey="title" {...header} />
             <StackedSortHeader
               columns={[
-                { label: t('shoots.col.created'), columnKey: 'createdAt' },
+                { label: t('shoots.col.uploaded'), columnKey: 'createdAt' },
                 { label: t('shoots.col.onSale'), columnKey: 'onSale' },
               ]}
               className={styles.table__compact}
@@ -150,7 +153,7 @@ export const ShootsTable = ({
               numeric
               {...header}
             />
-            <PartnerHeaders partners={partners} compact={compact} {...header} />
+            <LicenseHeaders licenses={licenses} compact={compact} {...header} />
           </tr>
         </thead>
         <tbody>
@@ -198,7 +201,9 @@ export const ShootsTable = ({
                   </td>
                   <td className={styles.table__compact}>
                     <div className={styles.table__stack}>
-                      <span>{formatDate(shoot.updatedAt)}</span>
+                      <span>
+                        {formatDate(shoot.uploadedAt ?? shoot.publishedAt)}
+                      </span>
                       <span>{formatDuration(shoot.publishedAt)}</span>
                     </div>
                   </td>
@@ -225,9 +230,9 @@ export const ShootsTable = ({
                       ? '—'
                       : formatMoney(shoot.revenuePerPhoto)}
                   </td>
-                  <PartnerCells
-                    partners={partners}
-                    byPartner={shoot.byPartner}
+                  <LicenseCells
+                    licenses={licenses}
+                    byLicense={shoot.byLicense}
                     compact={compact}
                     sortKey={sortKey}
                   />
@@ -242,6 +247,7 @@ export const ShootsTable = ({
                         shoots={shoots}
                         onMergeShoot={onMergeShoot}
                         onUnmergeShoot={onUnmergeShoot}
+                        onRenameShoot={onRenameShoot}
                       />
                     </td>
                   </tr>

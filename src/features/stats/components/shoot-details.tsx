@@ -2,12 +2,12 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { useI18n } from '@/hooks/use-i18n';
-import { WESTEND_ORIGIN } from '@/lib/westend-client';
-import type { ManualShoot, ShootPhoto } from '@/types/westend';
+import { assetPublicUrl } from '@/lib/shutterstock-client';
+import type { ManualShoot, ShootPhoto } from '@/types/shutterstock';
 import { formatDate, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import {
-  compareImageIds,
+  compareAssetIds,
   isMergeable,
   type PhotoStat,
   type ShootStat,
@@ -19,6 +19,7 @@ import {
   removeFromManualShoot,
   renameManualShoot,
 } from '../utils/manual-shoots';
+import { shootTitle } from '../utils/shoot-labels';
 import styles from './shoot-details.module.scss';
 
 type ShootDetailsProps = {
@@ -29,26 +30,30 @@ type ShootDetailsProps = {
   shoots: ShootStat[];
   onMergeShoot: (source: string, target: string) => void;
   onUnmergeShoot: (source: string) => void;
+  onRenameShoot: (key: string, title: string) => void;
 };
 
-const byImageId = (a: PhotoStat, b: PhotoStat) =>
-  compareImageIds(a.product.id, b.product.id);
+const byAssetId = (a: PhotoStat, b: PhotoStat) =>
+  compareAssetIds(a.product.id, b.product.id);
 
-/** An unsold image as a photo with no sales, to list it with the sold ones. */
+/** An unsold file as a photo with no sales, to list it with the sold ones. */
 const unsoldAsPhoto = (photo: ShootPhoto, shootKey: string): PhotoStat => ({
   product: {
     id: photo.id,
+    mediaType: photo.mediaType,
+    isIllustration: photo.isIllustration,
     headline: photo.headline ?? '',
     createdAt: photo.publishedAt,
     thumbUrl: photo.thumbUrl ?? '',
-    url: `${WESTEND_ORIGIN}/imageView/${photo.id}`,
+    url: assetPublicUrl(photo.id, photo.mediaType),
     sales: [],
   },
   shootKey,
   sales: [],
+  salesCount: 0,
   revenue: 0,
   lastSale: null,
-  byPartner: {},
+  byLicense: {},
 });
 
 const SoldCard = ({ photo }: { photo: PhotoStat }) => {
@@ -60,6 +65,9 @@ const SoldCard = ({ photo }: { photo: PhotoStat }) => {
       rel="noreferrer"
       className={styles.card}
     >
+      {photo.product.mediaType === 'video' && (
+        <span className={styles.card__badge}>{t('media.videoBadge')}</span>
+      )}
       <img
         src={photo.product.thumbUrl}
         alt={photo.product.headline}
@@ -72,7 +80,7 @@ const SoldCard = ({ photo }: { photo: PhotoStat }) => {
       </div>
       <div className={styles.card__meta}>
         {t('details.soldMeta', {
-          n: photo.sales.length,
+          n: photo.salesCount,
           date: formatDate(photo.lastSale),
         })}
       </div>
@@ -83,7 +91,15 @@ const SoldCard = ({ photo }: { photo: PhotoStat }) => {
 const UnsoldCard = ({ photo }: { photo: ShootPhoto }) => {
   const { t } = useI18n();
   return (
-    <div className={`${styles.card} ${styles.cardUnsold}`}>
+    <a
+      href={assetPublicUrl(photo.id, photo.mediaType)}
+      target="_blank"
+      rel="noreferrer"
+      className={`${styles.card} ${styles.cardUnsold}`}
+    >
+      {photo.mediaType === 'video' && (
+        <span className={styles.card__badge}>{t('media.videoBadge')}</span>
+      )}
       {photo.thumbUrl ? (
         <img
           src={photo.thumbUrl}
@@ -100,7 +116,7 @@ const UnsoldCard = ({ photo }: { photo: ShootPhoto }) => {
         </span>
       </div>
       <div className={styles.card__meta}>{t('details.notSold')}</div>
-    </div>
+    </a>
   );
 };
 
@@ -138,12 +154,12 @@ const RenameForm = ({ title, onRename, children }: RenameFormProps) => {
 
 const dateOf = (shoot: ShootStat) =>
   new Date(
-    (shoot.publishedAt ?? shoot.createdAt ?? '1970-01-01').slice(0, 10)
+    (shoot.uploadedAt ?? shoot.publishedAt ?? '1970-01-01').slice(0, 10)
   ).getTime();
 
 /**
- * Joins another Westend61 shoot into this one — for a photo session that was
- * uploaded in several parts. Shoots closest in date are offered first.
+ * Joins another upload-date shoot into this one — for a session uploaded
+ * across several days. Shoots closest in upload date are offered first.
  */
 const MergeForm = ({
   shoot,
@@ -174,12 +190,17 @@ const MergeForm = ({
           className={styles.input}
         >
           <option value="">{t('details.joinPlaceholder')}</option>
-          {candidates.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.title} · {formatDate(s.publishedAt ?? s.createdAt)} ·{' '}
-              {t('details.photosCount', { n: s.publishedCount ?? '?' })}
-            </option>
-          ))}
+          {candidates.map((s) => {
+            const label = s.customTitle
+              ? `${s.customTitle} · ${formatDate(s.uploadedAt ?? s.publishedAt)}`
+              : shootTitle(s, t);
+            return (
+              <option key={s.key} value={s.key}>
+                {label} ·{' '}
+                {t('details.photosCount', { n: s.publishedCount ?? '?' })}
+              </option>
+            );
+          })}
         </select>
         <Button
           variant="secondary"
@@ -213,50 +234,23 @@ const MergeForm = ({
   );
 };
 
-/** A Westend61 shoot: sold images first, then unsold in grey. */
-const WestendShootPhotos = ({
-  shoot,
-  shoots,
-  onMergeShoot,
-  onUnmergeShoot,
-}: Pick<
-  ShootDetailsProps,
-  'shoot' | 'shoots' | 'onMergeShoot' | 'onUnmergeShoot'
->) => {
-  const { t } = useI18n();
-  return (
-    <div>
-      <MergeForm
-        shoot={shoot}
-        shoots={shoots}
-        onMergeShoot={onMergeShoot}
-        onUnmergeShoot={onUnmergeShoot}
-      />
-      {!shoot.photos.length && !shoot.unsoldPhotos.length ? (
-        <p className={styles.empty}>{t('details.noPhotos')}</p>
-      ) : (
-        <div className={styles.grid}>
-          {shoot.photos.map((photo) => (
-            <SoldCard key={photo.product.id} photo={photo} />
-          ))}
-          {shoot.unsoldPhotos.map((photo) => (
-            <UnsoldCard key={photo.id} photo={photo} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 /**
- * «No shoot» and the user's own shoots: images can be ticked and moved into
- * a new or existing hand-made shoot, or taken out of one.
+ * Editable file grid: used directly by «No shoot» and own shoots, and toggled
+ * on inside an upload-date shoot to move selected files into an own shoot.
  */
 const EditableShootPhotos = ({
   shoot,
   manualShoots,
   onManualShootsChange,
-}: ShootDetailsProps) => {
+  showHint = true,
+  allowCreate = shoot.kind !== 'manual',
+}: Pick<
+  ShootDetailsProps,
+  'shoot' | 'manualShoots' | 'onManualShootsChange'
+> & {
+  showHint?: boolean;
+  allowCreate?: boolean;
+}) => {
   const { t } = useI18n();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
@@ -264,7 +258,6 @@ const EditableShootPhotos = ({
   const [targetId, setTargetId] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Sold and unsold images together, so any of them can be regrouped.
   const allPhotos = useMemo(
     () => [
       ...shoot.photos,
@@ -282,7 +275,7 @@ const EditableShootPhotos = ({
           )
         )
       : allPhotos;
-    return [...list].sort(byImageId);
+    return [...list].sort(byAssetId);
   }, [allPhotos, query]);
 
   const selectedIds = allPhotos
@@ -331,12 +324,16 @@ const EditableShootPhotos = ({
 
   return (
     <div>
-      {shoot.kind === 'unmatched' && (
+      {showHint && shoot.kind === 'unmatched' && (
         <p className={styles.hint}>{t('details.unmatchedHint')}</p>
       )}
 
       {shoot.kind === 'manual' && (
-        <RenameForm title={shoot.title} onRename={handleRename}>
+        <RenameForm
+          key={`${shoot.key}:${shoot.title}`}
+          title={shoot.title}
+          onRename={handleRename}
+        >
           <Button variant="secondary" onClick={() => setConfirmDelete(true)}>
             {t('details.deleteShoot')}
           </Button>
@@ -368,7 +365,7 @@ const EditableShootPhotos = ({
         </span>
       </div>
 
-      {shoot.kind === 'unmatched' && (
+      {allowCreate && (
         <div className={styles.toolbar}>
           <input
             type="text"
@@ -386,33 +383,32 @@ const EditableShootPhotos = ({
         </div>
       )}
 
-      {(shoot.kind === 'unmatched' || shoot.kind === 'manual') &&
-        otherManualShoots.length > 0 && (
-          <div className={styles.toolbar}>
-            <select
-              value={targetId}
-              onChange={(e) => setTargetId(e.target.value)}
-              aria-label={t('details.ownShoot')}
-              className={styles.input}
-            >
-              <option value="">{t('details.ownPlaceholder')}</option>
-              {otherManualShoots.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.title}
-                </option>
-              ))}
-            </select>
-            <Button
-              variant="secondary"
-              onClick={handleMove}
-              disabled={!selectedIds.length || !target}
-            >
-              {shoot.kind === 'manual'
-                ? t('details.moveThere')
-                : t('details.addToShoot')}
-            </Button>
-          </div>
-        )}
+      {otherManualShoots.length > 0 && (
+        <div className={styles.toolbar}>
+          <select
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            aria-label={t('details.ownShoot')}
+            className={styles.input}
+          >
+            <option value="">{t('details.ownPlaceholder')}</option>
+            {otherManualShoots.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="secondary"
+            onClick={handleMove}
+            disabled={!selectedIds.length || !target}
+          >
+            {shoot.kind === 'manual'
+              ? t('details.moveThere')
+              : t('details.addToShoot')}
+          </Button>
+        </div>
+      )}
 
       {shoot.kind === 'manual' && (
         <div className={styles.toolbar}>
@@ -432,8 +428,13 @@ const EditableShootPhotos = ({
           return (
             <label
               key={photo.product.id}
-              className={`${styles.card} ${styles.cardSelectable} ${photo.sales.length ? '' : styles.cardUnsold} ${isSelected ? styles.cardSelected : ''}`}
+              className={`${styles.card} ${styles.cardSelectable} ${photo.salesCount ? '' : styles.cardUnsold} ${isSelected ? styles.cardSelected : ''}`}
             >
+              {photo.product.mediaType === 'video' && (
+                <span className={styles.card__badge}>
+                  {t('media.videoBadge')}
+                </span>
+              )}
               <input
                 type="checkbox"
                 checked={isSelected}
@@ -456,7 +457,7 @@ const EditableShootPhotos = ({
                   {photo.product.id}
                 </a>
                 <strong>
-                  {photo.sales.length
+                  {photo.salesCount
                     ? formatMoney(photo.revenue)
                     : t('details.notSold')}
                 </strong>
@@ -491,14 +492,77 @@ const EditableShootPhotos = ({
   );
 };
 
+/**
+ * An upload-date shoot: supports renaming, joining across dates, and
+ * optionally ticking files to split into a custom shoot.
+ */
+const UploadDateShootPhotos = ({
+  shoot,
+  shoots,
+  manualShoots,
+  onManualShootsChange,
+  onMergeShoot,
+  onUnmergeShoot,
+  onRenameShoot,
+}: ShootDetailsProps) => {
+  const { t } = useI18n();
+  const [selecting, setSelecting] = useState(false);
+  const displayTitle = shoot.customTitle ?? shootTitle(shoot, t);
+
+  return (
+    <div>
+      <RenameForm
+        key={`${shoot.key}:${shoot.customTitle ?? ''}`}
+        title={displayTitle}
+        onRename={(next) => onRenameShoot(shoot.key, next)}
+      >
+        {shoot.customTitle && (
+          <Button
+            variant="secondary"
+            onClick={() => onRenameShoot(shoot.key, '')}
+          >
+            {t('details.resetName')}
+          </Button>
+        )}
+        <Button variant="secondary" onClick={() => setSelecting((v) => !v)}>
+          {t(selecting ? 'details.doneSelecting' : 'details.selectMode')}
+        </Button>
+      </RenameForm>
+
+      <MergeForm
+        shoot={shoot}
+        shoots={shoots}
+        onMergeShoot={onMergeShoot}
+        onUnmergeShoot={onUnmergeShoot}
+      />
+
+      {selecting ? (
+        <EditableShootPhotos
+          shoot={shoot}
+          manualShoots={manualShoots}
+          onManualShootsChange={onManualShootsChange}
+          showHint={false}
+          allowCreate
+        />
+      ) : !shoot.photos.length && !shoot.unsoldPhotos.length ? (
+        <p className={styles.empty}>{t('details.noPhotos')}</p>
+      ) : (
+        <div className={styles.grid}>
+          {shoot.photos.map((photo) => (
+            <SoldCard key={photo.product.id} photo={photo} />
+          ))}
+          {shoot.unsoldPhotos.map((photo) => (
+            <UnsoldCard key={photo.id} photo={photo} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ShootDetails = (props: ShootDetailsProps) =>
-  props.shoot.kind === 'westend' ? (
-    <WestendShootPhotos
-      shoot={props.shoot}
-      shoots={props.shoots}
-      onMergeShoot={props.onMergeShoot}
-      onUnmergeShoot={props.onUnmergeShoot}
-    />
+  props.shoot.kind === 'shutterstock' ? (
+    <UploadDateShootPhotos {...props} />
   ) : (
     <EditableShootPhotos {...props} />
   );

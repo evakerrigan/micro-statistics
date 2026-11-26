@@ -1,18 +1,19 @@
 import { useI18n } from '@/hooks/use-i18n';
 import { formatDate, formatMoney } from '@/utils/format';
 import type { PhotoStat } from '../utils/aggregate';
-import { partnerSortKey } from '../utils/partner-columns';
-import { partnerLabel } from '../utils/shoot-labels';
+import { licenseSortKey } from '../utils/license-columns';
+import { licenseLabel } from '../utils/shoot-labels';
 import { CardStat, RevenueBox } from './card-stat';
 import type { SortState } from './sort-header';
 import { SortBar } from './sort-bar';
 import cardStyles from './cards.module.scss';
+import photoStyles from './photos-table.module.scss';
 import styles from './table.module.scss';
 
 type PhotoCardsProps = SortState & {
   /** Already sorted and filtered. */
   photos: PhotoStat[];
-  partners: string[];
+  licenses: string[];
   shootTitleOf: (photo: PhotoStat) => string;
   emptyText: string;
 };
@@ -20,7 +21,7 @@ type PhotoCardsProps = SortState & {
 /** The photos table as cards, for narrow screens. */
 export const PhotoCards = ({
   photos,
-  partners,
+  licenses,
   shootTitleOf,
   emptyText,
   sortKey,
@@ -36,9 +37,9 @@ export const PhotoCards = ({
     { label: t('photos.col.lastSale'), columnKey: 'lastSale' },
     { label: t('photos.col.photo'), columnKey: 'id' },
     { label: t('col.shoot'), columnKey: 'shoot' },
-    ...partners.map((p) => ({
-      label: partnerLabel(p, t),
-      columnKey: partnerSortKey(p),
+    ...licenses.map((l) => ({
+      label: licenseLabel(l, t),
+      columnKey: licenseSortKey(l),
     })),
   ];
 
@@ -64,14 +65,21 @@ export const PhotoCards = ({
                 className={styles.table__thumb}
               />
               <div className={cardStyles.card__text}>
-                <a
-                  href={photo.product.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`${styles.table__primary} ${styles.table__link}`}
-                >
-                  {photo.product.id}
-                </a>
+                <div>
+                  <a
+                    href={photo.product.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`${styles.table__primary} ${styles.table__link}`}
+                  >
+                    {photo.product.id}
+                  </a>
+                  {photo.product.mediaType === 'video' && (
+                    <span className={photoStyles.videoBadge}>
+                      {t('media.videoBadge')}
+                    </span>
+                  )}
+                </div>
                 <div className={styles.table__secondary}>
                   {photo.product.headline}
                 </div>
@@ -85,7 +93,7 @@ export const PhotoCards = ({
             <div className={cardStyles.card__stats}>
               <CardStat
                 label={t('col.sales')}
-                value={photo.sales.length}
+                value={photo.salesCount}
                 highlighted={sorted('sales')}
               />
               <CardStat
@@ -99,18 +107,18 @@ export const PhotoCards = ({
                 highlighted={sorted('shoot')}
               />
             </div>
-            {partners.length > 0 && (
+            {licenses.length > 0 && (
               <div
                 className={`${cardStyles.card__stats} ${cardStyles.card__partners}`}
               >
-                {partners.map((p) => (
+                {licenses.map((l) => (
                   <CardStat
-                    key={p}
-                    label={partnerLabel(p, t)}
+                    key={l}
+                    label={licenseLabel(l, t)}
                     value={
-                      photo.byPartner[p] ? formatMoney(photo.byPartner[p]) : '—'
+                      photo.byLicense[l] ? formatMoney(photo.byLicense[l]) : '—'
                     }
-                    highlighted={sorted(partnerSortKey(p))}
+                    highlighted={sorted(licenseSortKey(l))}
                   />
                 ))}
               </div>

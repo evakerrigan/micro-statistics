@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useI18n } from '@/hooks/use-i18n';
 import type { MessageKey } from '@/lib/i18n';
-import type { Dataset } from '@/types/westend';
+import type { Dataset } from '@/types/shutterstock';
 import { formatMoney, formatPercent } from '@/utils/format';
 import { useManualShoots } from '../hooks/use-manual-shoots';
 import { useShootMerges } from '../hooks/use-shoot-merges';
+import { useShootNames } from '../hooks/use-shoot-names';
 import { buildStats } from '../utils/aggregate';
-import { partnerLabel } from '../utils/shoot-labels';
+import { licenseLabel } from '../utils/shoot-labels';
 import { MonthsView } from './months-view';
 import { PhotosTable } from './photos-table';
 import { ShootsTable } from './shoots-table';
@@ -34,16 +35,18 @@ export const StatsView = ({ dataset }: StatsViewProps) => {
   const [tab, setTab] = useState<TabId>('shoots');
   const manual = useManualShoots();
   const merges = useShootMerges();
+  const shootNames = useShootNames();
   const stats = useMemo(
-    () => buildStats(dataset, manual.value, merges.value),
-    [dataset, manual.value, merges.value]
+    () => buildStats(dataset, manual.value, merges.value, shootNames.value),
+    [dataset, manual.value, merges.value, shootNames.value]
   );
-  const ready = manual.ready && merges.ready;
+  const ready = manual.ready && merges.ready && shootNames.ready;
 
-  // Wait for the user's own shoots, so «No shoot» doesn't flash on load.
+  // Wait for user customizations, so «No shoot» or old names don't flash on load.
   if (!ready) return null;
 
-  const missing = Math.round((stats.westendTotal - stats.revenue) * 100) / 100;
+  const missing =
+    Math.round((stats.shutterstockTotal - stats.revenue) * 100) / 100;
   const matchedShoots = stats.shoots.filter((s) => s.kind !== 'unmatched');
   const unmatched = stats.shoots.find((s) => s.kind === 'unmatched');
 
@@ -70,6 +73,14 @@ export const StatsView = ({ dataset }: StatsViewProps) => {
               {t('stats.of', { n: stats.publishedPhotos })}
             </span>
           </div>
+          {stats.videoCount > 0 && (
+            <div className={styles.tile__sub}>
+              {t('stats.portfolioBreakdown', {
+                photos: stats.photoCount,
+                videos: stats.videoCount,
+              })}
+            </div>
+          )}
         </div>
         <div className={styles.tile}>
           <div className={styles.tile__label}>
@@ -103,36 +114,27 @@ export const StatsView = ({ dataset }: StatsViewProps) => {
         </div>
       </div>
 
-      <h2 className={styles.sectionTitle}>{t('stats.partnersTitle')}</h2>
+      <h2 className={styles.sectionTitle}>{t('stats.licensesTitle')}</h2>
       <div className={styles.tiles}>
-        {stats.partners.map((p) => (
-          <div key={p} className={styles.tile}>
-            <div className={styles.tile__label}>{partnerLabel(p, t)}</div>
+        {stats.licenses.map((l) => (
+          <div key={l} className={styles.tile}>
+            <div className={styles.tile__label}>{licenseLabel(l, t)}</div>
             <div className={styles.tile__value}>
               {formatMoney(
-                stats.months.reduce((sum, m) => sum + (m.byPartner[p] ?? 0), 0)
+                stats.months.reduce((sum, m) => sum + (m.byLicense[l] ?? 0), 0)
               )}
             </div>
           </div>
         ))}
       </div>
 
-      {Math.abs(missing) >= 0.01 && (
+      {Math.abs(missing) >= 0.02 && (
         <p className={styles.notice}>
           {t('stats.mismatch', {
-            total: formatMoney(stats.westendTotal),
+            total: formatMoney(stats.shutterstockTotal),
             collected: formatMoney(stats.revenue),
             diff: formatMoney(missing),
           })}
-        </p>
-      )}
-      {dataset.shootsError && (
-        <p className={styles.notice}>
-          {t(
-            dataset.shootsError === 'auth'
-              ? 'stats.shootsAuth'
-              : 'stats.shootsError'
-          )}
         </p>
       )}
       {unmatched && unmatched.photos.length > 0 && (
@@ -162,24 +164,25 @@ export const StatsView = ({ dataset }: StatsViewProps) => {
       {tab === 'shoots' && (
         <ShootsTable
           shoots={stats.shoots}
-          partners={stats.partners}
+          licenses={stats.assetLicenses}
           manualShoots={manual.value}
           onManualShootsChange={manual.update}
           onMergeShoot={merges.merge}
           onUnmergeShoot={merges.unmerge}
+          onRenameShoot={shootNames.rename}
         />
       )}
       {tab === 'photos' && (
         <PhotosTable
           photos={stats.photos}
           shoots={stats.shoots}
-          partners={stats.partners}
+          licenses={stats.assetLicenses}
         />
       )}
       {tab === 'months' && (
         <MonthsView
           months={stats.months}
-          partners={stats.partners}
+          licenses={stats.licenses}
           portfolioDates={stats.portfolioDates}
         />
       )}

@@ -3,30 +3,51 @@ import { getActiveLanguage } from '@/lib/i18n';
 // Formatting follows the interface language (see `lib/i18n`).
 
 const moneyFormats = {
-  en: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }),
-  ru: new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'EUR' }),
+  en: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
+  ru: new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'USD' }),
 };
 
-/** `1232.68` -> `€1,232.68` / `1 232,68 €` */
+/** `1232.68` -> `$1,232.68` / `1 232,68 $` */
 export const formatMoney = (value: number) =>
   moneyFormats[getActiveLanguage()].format(value);
 
 const wholeMoneyFormats = {
   en: new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'USD',
     maximumFractionDigits: 0,
   }),
   ru: new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'USD',
     maximumFractionDigits: 0,
   }),
 };
 
-/** Whole euros, for chart axes: `€1,233` / `1 233 €` */
+const tickMoneyFormats = {
+  en: new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }),
+  ru: new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }),
+};
+
+/** Whole dollars, for bar labels: `$1,233` / `1 233 $` */
 export const formatMoneyShort = (value: number) =>
   wholeMoneyFormats[getActiveLanguage()].format(value);
+
+/** Axis ticks: shows decimals only when the tick isn't a whole dollar. */
+export const formatMoneyTick = (value: number) =>
+  (Number.isInteger(value) ? wholeMoneyFormats : tickMoneyFormats)[
+    getActiveLanguage()
+  ].format(value);
 
 const decimalFormats = {
   en: new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }),

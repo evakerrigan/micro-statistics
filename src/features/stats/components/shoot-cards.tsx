@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useI18n } from '@/hooks/use-i18n';
-import type { ManualShoot } from '@/types/westend';
+import type { ManualShoot } from '@/types/shutterstock';
 import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import type { ShootStat } from '../utils/aggregate';
-import { partnerSortKey } from '../utils/partner-columns';
-import { partnerLabel, shootSubtitle, shootTitle } from '../utils/shoot-labels';
+import { licenseSortKey } from '../utils/license-columns';
+import { licenseLabel, shootSubtitle, shootTitle } from '../utils/shoot-labels';
 import { CardStat, RevenueBox } from './card-stat';
 import { ShootDetails } from './shoot-details';
 import type { SortState } from './sort-header';
@@ -19,18 +19,19 @@ type ShootCardsProps = SortState & {
   shoots: ShootStat[];
   /** Every shoot, for joining shoots together in the details. */
   allShoots: ShootStat[];
-  partners: string[];
+  licenses: string[];
   manualShoots: ManualShoot[];
   onManualShootsChange: (update: ManualShootsUpdate) => void;
   onMergeShoot: (source: string, target: string) => void;
   onUnmergeShoot: (source: string) => void;
+  onRenameShoot: (key: string, title: string) => void;
 };
 
 /** The shoots table as cards, for narrow screens. */
 export const ShootCards = ({
   shoots,
   allShoots,
-  partners,
+  licenses,
   sortKey,
   direction,
   onSort,
@@ -45,12 +46,12 @@ export const ShootCards = ({
     { label: t('col.sales'), columnKey: 'sales' },
     { label: t('shoots.col.published'), columnKey: 'published' },
     { label: t('shoots.col.sold'), columnKey: 'sold' },
-    { label: t('shoots.col.created'), columnKey: 'createdAt' },
+    { label: t('shoots.col.uploaded'), columnKey: 'createdAt' },
     { label: t('shoots.col.onSale'), columnKey: 'onSale' },
     { label: t('col.shoot'), columnKey: 'title' },
-    ...partners.map((p) => ({
-      label: partnerLabel(p, t),
-      columnKey: partnerSortKey(p),
+    ...licenses.map((l) => ({
+      label: licenseLabel(l, t),
+      columnKey: licenseSortKey(l),
     })),
   ];
 
@@ -132,8 +133,8 @@ export const ShootCards = ({
                     highlighted={sorted('sold')}
                   />
                   <CardStat
-                    label={t('shoots.col.created')}
-                    value={formatDate(shoot.updatedAt)}
+                    label={t('shoots.col.uploaded')}
+                    value={formatDate(shoot.uploadedAt ?? shoot.publishedAt)}
                     highlighted={sorted('createdAt')}
                   />
                   <CardStat
@@ -142,20 +143,20 @@ export const ShootCards = ({
                     highlighted={sorted('onSale')}
                   />
                 </div>
-                {partners.length > 0 && (
+                {licenses.length > 0 && (
                   <div
                     className={`${cardStyles.card__stats} ${cardStyles.card__partners}`}
                   >
-                    {partners.map((p) => (
+                    {licenses.map((l) => (
                       <CardStat
-                        key={p}
-                        label={partnerLabel(p, t)}
+                        key={l}
+                        label={licenseLabel(l, t)}
                         value={
-                          shoot.byPartner[p]
-                            ? formatMoney(shoot.byPartner[p])
+                          shoot.byLicense[l]
+                            ? formatMoney(shoot.byLicense[l])
                             : '—'
                         }
-                        highlighted={sorted(partnerSortKey(p))}
+                        highlighted={sorted(licenseSortKey(l))}
                       />
                     ))}
                   </div>

@@ -1,11 +1,11 @@
 {
   "extName": {
-    "message": "Статистика продаж для фотографов Westend61"
+    "message": "Статистика продаж для авторов Shutterstock"
   },
   "extShortName": {
-    "message": "Westend61 Stats"
+    "message": "Shutterstock Stats"
   },
   "extDescription": {
-    "message": "Статистика продаж для фотографов Westend61: доход по фото, съёмкам, месяцам и партнёрам. Не связано с Westend61."
+    "message": "Статистика продаж для авторов Shutterstock: доход по файлам, съёмкам, месяцам и типам лицензий. Не связано с Shutterstock."
   }
 }

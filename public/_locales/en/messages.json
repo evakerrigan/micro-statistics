@@ -1,11 +1,11 @@
 {
   "extName": {
-    "message": "Contributor Stats for Westend61"
+    "message": "Contributor Stats for Shutterstock"
   },
   "extShortName": {
-    "message": "Westend61 Stats"
+    "message": "Shutterstock Stats"
   },
   "extDescription": {
-    "message": "Sales statistics for Westend61 photographers: earnings by photo, shoot, month and partner. Not affiliated with Westend61."
+    "message": "Sales statistics for Shutterstock contributors: earnings by file, shoot, month and license type. Not affiliated with Shutterstock."
   }
 }

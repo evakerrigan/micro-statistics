@@ -5,6 +5,7 @@ import {
   MOBILE_QUERY,
   useMediaQuery,
 } from '@/hooks/use-media-query';
+import type { MediaKind } from '@/types/shutterstock';
 import { formatDate, formatMoney } from '@/utils/format';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
 import {
@@ -13,11 +14,11 @@ import {
   UNMATCHED_KEY,
 } from '../utils/aggregate';
 import {
-  isDensePartnerTable,
-  partnerColumnCount,
-} from '../utils/partner-columns';
+  isDenseLicenseTable,
+  licenseColumnCount,
+} from '../utils/license-columns';
 import { shootTitle } from '../utils/shoot-labels';
-import { PartnerCells, PartnerHeaders } from './partner-columns';
+import { LicenseCells, LicenseHeaders } from './license-columns';
 import { PhotoCards } from './photo-cards';
 import { SortHeader } from './sort-header';
 import { TableWrap } from './table-wrap';
@@ -27,14 +28,22 @@ import photoStyles from './photos-table.module.scss';
 type PhotosTableProps = {
   photos: PhotoStat[];
   shoots: ShootStat[];
-  partners: string[];
+  licenses: string[];
 };
 
-export const PhotosTable = ({ photos, shoots, partners }: PhotosTableProps) => {
+type MediaFilter = 'all' | MediaKind;
+
+export const PhotosTable = ({ photos, shoots, licenses }: PhotosTableProps) => {
   const { t } = useI18n();
   const compact = useMediaQuery(COMPACT_QUERY);
   const mobile = useMediaQuery(MOBILE_QUERY);
   const [query, setQuery] = useState('');
+  const [mediaFilter, setMediaFilter] = useState<MediaFilter>('all');
+
+  const hasVideos = useMemo(
+    () => photos.some((p) => p.product.mediaType === 'video'),
+    [photos]
+  );
 
   const shootTitles = useMemo(
     () => new Map(shoots.map((s) => [s.key, shootTitle(s, t)])),
@@ -45,31 +54,34 @@ export const PhotosTable = ({ photos, shoots, partners }: PhotosTableProps) => {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return photos;
-    return photos.filter((p) =>
-      [
+    return photos.filter((p) => {
+      if (mediaFilter !== 'all' && p.product.mediaType !== mediaFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return [
         p.product.id,
         p.product.headline,
         shootTitles.get(p.shootKey ?? UNMATCHED_KEY) ?? '',
-      ].some((field) => field.toLowerCase().includes(q))
-    );
-  }, [photos, query, shootTitles]);
+      ].some((field) => field.toLowerCase().includes(q));
+    });
+  }, [photos, query, mediaFilter, shootTitles]);
 
   const accessors = useMemo<SortAccessors<PhotoStat>>(
     () => ({
       id: (p) => p.product.id,
       shoot: (p) => shootTitles.get(p.shootKey ?? UNMATCHED_KEY) ?? '',
-      sales: (p) => p.sales.length,
+      sales: (p) => p.salesCount,
       revenue: (p) => p.revenue,
       lastSale: (p) => p.lastSale ?? '',
       ...Object.fromEntries(
-        partners.map((name) => [
-          `partner:${name}`,
-          (p: PhotoStat) => p.byPartner[name] ?? 0,
+        licenses.map((name) => [
+          `license:${name}`,
+          (p: PhotoStat) => p.byLicense[name] ?? 0,
         ])
       ),
     }),
-    [partners, shootTitles]
+    [licenses, shootTitles]
   );
   const { sorted, sortKey, direction, toggle } = useSort(
     filtered,
@@ -78,27 +90,55 @@ export const PhotosTable = ({ photos, shoots, partners }: PhotosTableProps) => {
   );
   const header = { sortKey, direction, onSort: toggle };
 
+  const filterButtons: { id: MediaFilter; label: string }[] = [
+    { id: 'all', label: t('media.all') },
+    { id: 'photo', label: t('media.photos') },
+    { id: 'video', label: t('media.videos') },
+  ];
+
   return (
     <>
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t('photos.search')}
-        className={photoStyles.search}
-      />
+      <div className={photoStyles.toolbar}>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('photos.search')}
+          className={photoStyles.search}
+        />
+        {hasVideos && (
+          <div className={photoStyles.filters} role="group">
+            {filterButtons.map((btn) => (
+              <button
+                key={btn.id}
+                type="button"
+                className={`${photoStyles.filter} ${mediaFilter === btn.id ? photoStyles.filterActive : ''}`}
+                aria-pressed={mediaFilter === btn.id}
+                onClick={() => setMediaFilter(btn.id)}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {mobile ? (
         <PhotoCards
           photos={sorted}
-          partners={partners}
+          licenses={licenses}
           shootTitleOf={titleOf}
-          emptyText={query ? t('details.nothingFound') : t('photos.empty')}
+          emptyText={
+            query || mediaFilter !== 'all'
+              ? t('details.nothingFound')
+              : t('photos.empty')
+          }
           {...header}
         />
       ) : (
         <TableWrap>
           <table
-            className={`${styles.table} ${isDensePartnerTable(partners, compact) ? styles.table__dense : ''}`}
+            className={`${styles.table} ${isDenseLicenseTable(licenses, compact) ? styles.table__dense : ''}`}
           >
             <thead>
               <tr>
@@ -129,8 +169,8 @@ export const PhotosTable = ({ photos, shoots, partners }: PhotosTableProps) => {
                   className={styles.table__revenue}
                   {...header}
                 />
-                <PartnerHeaders
-                  partners={partners}
+                <LicenseHeaders
+                  licenses={licenses}
                   compact={compact}
                   {...header}
                 />
@@ -146,10 +186,12 @@ export const PhotosTable = ({ photos, shoots, partners }: PhotosTableProps) => {
               {sorted.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6 + partnerColumnCount(partners, compact)}
+                    colSpan={6 + licenseColumnCount(licenses, compact)}
                     className={styles.table__empty}
                   >
-                    {query ? t('details.nothingFound') : t('photos.empty')}
+                    {query || mediaFilter !== 'all'
+                      ? t('details.nothingFound')
+                      : t('photos.empty')}
                   </td>
                 </tr>
               )}
@@ -174,20 +216,25 @@ export const PhotosTable = ({ photos, shoots, partners }: PhotosTableProps) => {
                     >
                       {photo.product.id}
                     </a>
+                    {photo.product.mediaType === 'video' && (
+                      <span className={photoStyles.videoBadge}>
+                        {t('media.videoBadge')}
+                      </span>
+                    )}
                     <div className={styles.table__secondary}>
                       {photo.product.headline}
                     </div>
                   </td>
                   <td>{titleOf(photo)}</td>
-                  <td className={styles.table__num}>{photo.sales.length}</td>
+                  <td className={styles.table__num}>{photo.salesCount}</td>
                   <td
                     className={`${styles.table__num} ${styles.table__revenue}`}
                   >
                     {formatMoney(photo.revenue)}
                   </td>
-                  <PartnerCells
-                    partners={partners}
-                    byPartner={photo.byPartner}
+                  <LicenseCells
+                    licenses={licenses}
+                    byLicense={photo.byLicense}
                     compact={compact}
                     sortKey={sortKey}
                   />

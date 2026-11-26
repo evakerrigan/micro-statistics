@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useI18n } from '@/hooks/use-i18n';
 import type { MessageKey } from '@/lib/i18n';
-import { formatMoney, formatMoneyShort, formatMonth } from '@/utils/format';
+import {
+  formatMoney,
+  formatMoneyShort,
+  formatMoneyTick,
+  formatMonth,
+} from '@/utils/format';
 import type { MonthStat } from '../utils/aggregate';
-import { isDensePartnerTable } from '../utils/partner-columns';
-import { partnerLabel } from '../utils/shoot-labels';
+import { isDenseLicenseTable } from '../utils/license-columns';
+import { licenseLabel } from '../utils/shoot-labels';
 import { BreakableName } from './breakable-name';
 import { MonthsChart } from './months-chart';
 import { TableWrap } from './table-wrap';
@@ -13,8 +18,8 @@ import chartStyles from './months-view.module.scss';
 
 type MonthsViewProps = {
   months: MonthStat[];
-  partners: string[];
-  /** Go-live dates of the portfolio images, oldest first. */
+  licenses: string[];
+  /** Upload dates of the portfolio files, oldest first. */
   portfolioDates: string[];
 };
 
@@ -37,14 +42,14 @@ const fillMonths = (months: MonthStat[]): MonthStat[] => {
   const result: MonthStat[] = [];
   for (let key = monthKey(cursor); key <= end; key = monthKey(cursor)) {
     result.push(
-      byKey.get(key) ?? { key, revenue: 0, salesCount: 0, byPartner: {} }
+      byKey.get(key) ?? { key, revenue: 0, salesCount: 0, byLicense: {} }
     );
     cursor.setMonth(cursor.getMonth() + 1);
   }
   return result;
 };
 
-const roundMoney = (n: number) => Math.round(n * 100) / 100;
+const roundMoney = (n: number) => Math.round(n * 10000) / 10000;
 
 /**
  * Months summed per calendar year, oldest first. Same shape as a month, with
@@ -58,35 +63,35 @@ const sumByYear = (months: MonthStat[]): MonthStat[] => {
       key,
       revenue: 0,
       salesCount: 0,
-      byPartner: {},
+      byLicense: {},
     };
     stat.revenue += m.revenue;
     stat.salesCount += m.salesCount;
-    for (const [p, amount] of Object.entries(m.byPartner)) {
-      stat.byPartner[p] = (stat.byPartner[p] ?? 0) + amount;
+    for (const [l, amount] of Object.entries(m.byLicense)) {
+      stat.byLicense[l] = (stat.byLicense[l] ?? 0) + amount;
     }
     byYear.set(key, stat);
   }
   return [...byYear.values()].map((y) => ({
     ...y,
     revenue: roundMoney(y.revenue),
-    byPartner: Object.fromEntries(
-      Object.entries(y.byPartner).map(([p, amount]) => [p, roundMoney(amount)])
+    byLicense: Object.fromEntries(
+      Object.entries(y.byLicense).map(([l, amount]) => [l, roundMoney(amount)])
     ),
   }));
 };
 
-/** Images already published by the end of each month. */
+/** Files already uploaded by the end of each month. */
 const portfolioAtMonthEnd = (months: MonthStat[], dates: string[]) =>
   months.map((m) => dates.filter((d) => d.slice(0, 7) <= m.key).length);
 
-/** Images already published by the end of each year. */
+/** Files already uploaded by the end of each year. */
 const portfolioAtYearEnd = (years: MonthStat[], dates: string[]) =>
   years.map((y) => dates.filter((d) => d.slice(0, 4) <= y.key).length);
 
 export const MonthsView = ({
   months,
-  partners,
+  licenses,
   portfolioDates,
 }: MonthsViewProps) => {
   const { t } = useI18n();
@@ -112,17 +117,17 @@ export const MonthsView = ({
     [years, portfolioDates]
   );
 
-  /** Revenue tooltip lines: number of sales and the split by partner. */
+  /** Revenue tooltip lines: number of downloads and the split by license. */
   const revenueTooltip = (m: MonthStat) => (
     <>
       <div className={chartStyles.tooltipMuted}>
         {t('months.tooltipSales', { n: m.salesCount })}
       </div>
-      {partners
-        .filter((p) => m.byPartner[p])
-        .map((p) => (
-          <div key={p} className={chartStyles.tooltipMuted}>
-            {partnerLabel(p, t)}: {formatMoney(m.byPartner[p])}
+      {licenses
+        .filter((l) => m.byLicense[l])
+        .map((l) => (
+          <div key={l} className={chartStyles.tooltipMuted}>
+            {licenseLabel(l, t)}: {formatMoney(m.byLicense[l])}
           </div>
         ))}
     </>
@@ -176,7 +181,7 @@ export const MonthsView = ({
               months={years}
               value={(y) => y.revenue}
               formatValue={formatMoney}
-              formatTick={formatMoneyShort}
+              formatTick={formatMoneyTick}
               formatKey={(key) =>
                 key === currentYear
                   ? `${key} (${t('months.yearPartial')})`
@@ -186,7 +191,11 @@ export const MonthsView = ({
               seriesLabel={t('months.legendRevenue')}
               portfolio={yearPortfolio}
               tooltipExtra={revenueTooltip}
-              barLabel={(y) => formatMoneyShort(y.revenue)}
+              barLabel={(y) =>
+                y.revenue < 10
+                  ? formatMoney(y.revenue)
+                  : formatMoneyShort(y.revenue)
+              }
             />
           </div>
         </>
@@ -217,7 +226,7 @@ export const MonthsView = ({
         months={visible}
         value={(m) => m.revenue}
         formatValue={formatMoney}
-        formatTick={formatMoneyShort}
+        formatTick={formatMoneyTick}
         seriesLabel={t('months.legendRevenue')}
         portfolio={portfolio}
         tooltipExtra={revenueTooltip}
@@ -244,7 +253,7 @@ export const MonthsView = ({
 
       <TableWrap>
         <table
-          className={`${styles.table} ${isDensePartnerTable(partners, false) ? styles.table__dense : ''}`}
+          className={`${styles.table} ${isDenseLicenseTable(licenses, false) ? styles.table__dense : ''}`}
         >
           <thead>
             <tr>
@@ -253,12 +262,12 @@ export const MonthsView = ({
               <th className={`${styles.table__num} ${styles.table__revenue}`}>
                 {t('col.revenue')}
               </th>
-              {partners.map((p) => (
+              {licenses.map((l) => (
                 <th
-                  key={p}
+                  key={l}
                   className={`${styles.table__num} ${styles.table__partnerHead}`}
                 >
-                  <BreakableName name={partnerLabel(p, t)} />
+                  <BreakableName name={licenseLabel(l, t)} />
                 </th>
               ))}
             </tr>
@@ -266,7 +275,7 @@ export const MonthsView = ({
           <tbody>
             {[...visible]
               .reverse()
-              .filter((m) => m.salesCount)
+              .filter((m) => m.salesCount || m.revenue)
               .map((m) => (
                 <tr key={m.key}>
                   <td className={styles.table__pinned}>{formatMonth(m.key)}</td>
@@ -276,9 +285,9 @@ export const MonthsView = ({
                   >
                     {formatMoney(m.revenue)}
                   </td>
-                  {partners.map((p) => (
-                    <td key={p} className={styles.table__num}>
-                      {m.byPartner[p] ? formatMoney(m.byPartner[p]) : '—'}
+                  {licenses.map((l) => (
+                    <td key={l} className={styles.table__num}>
+                      {m.byLicense[l] ? formatMoney(m.byLicense[l]) : '—'}
                     </td>
                   ))}
                 </tr>

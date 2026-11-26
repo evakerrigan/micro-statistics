@@ -6,17 +6,17 @@ import {
   formatDecimal,
   formatDuration,
   formatMoney,
-  formatMoneyShort,
+  formatMoneyTick,
   formatMonths,
 } from '@/utils/format';
 import { useHiddenChartYears } from '../hooks/use-hidden-chart-years';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
-import { updatedSortKey, type ShootStat } from '../utils/aggregate';
+import { uploadedSortKey, type ShootStat } from '../utils/aggregate';
 import { shootSubtitle, shootTitle } from '../utils/shoot-labels';
 import {
+  buildYears,
   buildYearSales,
   saleAmount,
-  buildYears,
   salesPerHundredPhotos,
   type YearStat,
 } from '../utils/years';
@@ -137,7 +137,6 @@ export const YearsView = ({ shoots }: YearsViewProps) => {
                     onClick={() => toggleYear(year.year)}
                   >
                     <td className={styles.table__pinned}>
-                      {/* Clicks bubble up to the row, which does the toggling. */}
                       <button
                         type="button"
                         className={yearStyles.toggle}
@@ -192,7 +191,7 @@ export const YearsView = ({ shoots }: YearsViewProps) => {
           <YearsChart
             sales={yearRevenue}
             formatValue={formatMoney}
-            formatTick={formatMoneyShort}
+            formatTick={formatMoneyTick}
             note={t('years.revenue.note')}
             {...chartYears('revenue')}
           />
@@ -211,7 +210,7 @@ export const YearsView = ({ shoots }: YearsViewProps) => {
   );
 };
 
-/** A year's shoots: the shoots table's main columns, without partners. */
+/** A year's shoots: the shoots table's main columns, without licenses. */
 const YearShootsTable = ({ shoots }: { shoots: ShootStat[] }) => {
   const { t } = useI18n();
   const compact = useMediaQuery(COMPACT_QUERY);
@@ -219,7 +218,7 @@ const YearShootsTable = ({ shoots }: { shoots: ShootStat[] }) => {
   const accessors = useMemo<SortAccessors<ShootStat>>(
     () => ({
       title: (s) => shootTitle(s, t),
-      createdAt: updatedSortKey,
+      createdAt: uploadedSortKey,
       onSale: (s) =>
         s.publishedAt
           ? Date.now() - new Date(s.publishedAt.slice(0, 10)).getTime()
@@ -247,7 +246,7 @@ const YearShootsTable = ({ shoots }: { shoots: ShootStat[] }) => {
             <SortHeader label={t('col.shoot')} columnKey="title" {...header} />
             <StackedSortHeader
               columns={[
-                { label: t('shoots.col.created'), columnKey: 'createdAt' },
+                { label: t('shoots.col.uploaded'), columnKey: 'createdAt' },
                 { label: t('shoots.col.onSale'), columnKey: 'onSale' },
               ]}
               className={styles.table__compact}
@@ -313,7 +312,9 @@ const YearShootsTable = ({ shoots }: { shoots: ShootStat[] }) => {
               </td>
               <td className={styles.table__compact}>
                 <div className={styles.table__stack}>
-                  <span>{formatDate(shoot.updatedAt)}</span>
+                  <span>
+                    {formatDate(shoot.uploadedAt ?? shoot.publishedAt)}
+                  </span>
                   <span>{formatDuration(shoot.publishedAt)}</span>
                 </div>
               </td>

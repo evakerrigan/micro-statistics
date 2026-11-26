@@ -1,5 +1,5 @@
 import { loadHiddenChartYears, saveHiddenChartYears } from '@/lib/storage';
-import type { HiddenChartYears } from '@/types/westend';
+import type { HiddenChartYears } from '@/types/shutterstock';
 import { useStoredState } from './use-stored-state';
 
 const EMPTY: HiddenChartYears = {};
