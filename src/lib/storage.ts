@@ -1,6 +1,8 @@
 import {
+  type AssetMatchOverrides,
   type Dataset,
   type HiddenChartYears,
+  type ImageFingerprint,
   type ManualShoot,
   type ShootMerges,
   type ShootNames,
@@ -17,6 +19,8 @@ const SHOOT_MERGES_BASE = 'shootMerges';
 const SHOOT_NAMES_BASE = 'shootNames';
 const HIDDEN_CHART_YEARS_BASE = 'hiddenChartYears';
 const SYNC_CACHE_BASE = 'syncCache';
+const IMAGE_HASHES_KEY = 'all:imageHashes';
+const ASSET_MATCH_OVERRIDES_KEY = 'all:assetMatches';
 
 // Outside the extension (plain `npm run dev`) chrome.storage is unavailable,
 // so fall back to localStorage to keep the UI usable while developing.
@@ -124,6 +128,27 @@ export const saveSyncCache = (
   cache: SyncCache,
   stock: StockId = 'shutterstock'
 ) => write(stock, SYNC_CACHE_BASE, cache);
+
+export const loadImageHashes = async (): Promise<
+  Record<string, ImageFingerprint>
+> => (await readRaw<Record<string, ImageFingerprint>>(IMAGE_HASHES_KEY)) ?? {};
+
+export const saveImageHashes = (hashes: Record<string, ImageFingerprint>) =>
+  writeRaw(IMAGE_HASHES_KEY, hashes);
+
+export const loadAssetMatchOverrides =
+  async (): Promise<AssetMatchOverrides> => {
+    const stored = await readRaw<AssetMatchOverrides>(
+      ASSET_MATCH_OVERRIDES_KEY
+    );
+    return {
+      links: Array.isArray(stored?.links) ? stored.links : [],
+      unlinks: Array.isArray(stored?.unlinks) ? stored.unlinks : [],
+    };
+  };
+
+export const saveAssetMatchOverrides = (overrides: AssetMatchOverrides) =>
+  writeRaw(ASSET_MATCH_OVERRIDES_KEY, overrides);
 
 export const loadAllDatasets = async (): Promise<
   Partial<Record<StockId, Dataset>>

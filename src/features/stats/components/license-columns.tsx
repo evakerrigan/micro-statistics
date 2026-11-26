@@ -12,20 +12,24 @@ type LicenseHeadersProps = SortState & {
   licenses: string[];
   /** One stacked column instead of a column per license type. */
   compact: boolean;
+  /** Optional label override (used for stock columns on the All tab). */
+  formatLabel?: (key: string) => string;
 };
 
 export const LicenseHeaders = ({
   licenses,
   compact,
+  formatLabel,
   ...sort
 }: LicenseHeadersProps) => {
   const { t } = useI18n();
+  const labelOf = formatLabel ?? ((l: string) => licenseLabel(l, t));
   if (!licenses.length) return null;
   if (compact) {
     return (
       <StackedSortHeader
         columns={licenses.map((l) => ({
-          label: licenseLabel(l, t),
+          label: labelOf(l),
           columnKey: licenseSortKey(l),
         }))}
         numeric
@@ -36,7 +40,7 @@ export const LicenseHeaders = ({
   return licenses.map((l) => (
     <SortHeader
       key={l}
-      label={<BreakableName name={licenseLabel(l, t)} />}
+      label={<BreakableName name={labelOf(l)} />}
       columnKey={licenseSortKey(l)}
       numeric
       className={styles.table__partnerHead}
@@ -51,6 +55,7 @@ type LicenseCellsProps = {
   compact: boolean;
   /** The table's sort key: the license type sorted by is highlighted. */
   sortKey: string;
+  formatLabel?: (key: string) => string;
 };
 
 export const LicenseCells = ({
@@ -58,8 +63,10 @@ export const LicenseCells = ({
   byLicense,
   compact,
   sortKey,
+  formatLabel,
 }: LicenseCellsProps) => {
   const { t } = useI18n();
+  const labelOf = formatLabel ?? ((l: string) => licenseLabel(l, t));
   const isSorted = (l: string) => licenseSortKey(l) === sortKey;
   const amount = (l: string) =>
     byLicense[l] ? formatMoney(byLicense[l]) : '—';
@@ -71,7 +78,7 @@ export const LicenseCells = ({
           {licenses.map((l) => (
             <StackRow
               key={l}
-              label={licenseLabel(l, t)}
+              label={labelOf(l)}
               value={amount(l)}
               highlighted={isSorted(l)}
             />

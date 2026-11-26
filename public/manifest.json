@@ -23,7 +23,10 @@
   },
   "permissions": ["storage", "unlimitedStorage", "scripting"],
   "host_permissions": [
-    "https://submit.shutterstock.com/*",
-    "https://contributor.stock.adobe.com/*"
+    "https://*.shutterstock.com/*",
+    "https://*.picdn.net/*",
+    "https://contributor.stock.adobe.com/*",
+    "https://stock.adobe.com/*",
+    "https://*.ftcdn.net/*"
   ]
 }

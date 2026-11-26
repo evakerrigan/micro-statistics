@@ -11,10 +11,13 @@ import {
   type StockId,
 } from '@/types/stock';
 import { formatDate, formatMoney, formatPercent } from '@/utils/format';
+import { useAssetMatches } from '../hooks/use-asset-matches';
+import { useImageHashes } from '../hooks/use-image-hashes';
 import { combineAllStats, STOCK_NAME_KEYS } from '../utils/combine';
+import { matchAcrossStocks } from '../utils/match-assets';
 import { licenseLabel } from '../utils/shoot-labels';
+import { MergedPhotosTable } from './merged-photos-table';
 import { MonthsView } from './months-view';
-import { PhotosTable } from './photos-table';
 import { YearsView } from './years-view';
 import allStyles from './all-stats-view.module.scss';
 import styles from './stats-view.module.scss';
@@ -44,11 +47,44 @@ export const AllStatsView = ({
 }: AllStatsViewProps) => {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabId>('months');
+  const assetMatches = useAssetMatches();
 
   const combined = useMemo(
     () =>
       combineAllStats(datasets, manualByStock, mergesByStock, namesByStock, t),
     [datasets, manualByStock, mergesByStock, namesByStock, t]
+  );
+
+  const hashInputs = useMemo(
+    () =>
+      combined.photoParts.map((p) => ({
+        uid: p.uid,
+        thumbUrl: p.photo.product.thumbUrl,
+      })),
+    [combined.photoParts]
+  );
+
+  const {
+    hashes,
+    ready: hashesReady,
+    status: hashStatus,
+    retry: retryHashes,
+  } = useImageHashes(hashInputs, combined.entries.length > 1);
+
+  const mergedPhotos = useMemo(
+    () =>
+      matchAcrossStocks(
+        combined.photoParts,
+        hashesReady ? hashes : {},
+        assetMatches.ready ? assetMatches.value : { links: [], unlinks: [] }
+      ),
+    [
+      combined.photoParts,
+      hashesReady,
+      hashes,
+      assetMatches.ready,
+      assetMatches.value,
+    ]
   );
 
   const entryByStock = new Map(combined.entries.map((e) => [e.stock, e]));
@@ -190,10 +226,21 @@ export const AllStatsView = ({
                 type="button"
                 role="tab"
                 aria-selected={tab === item.id}
+                title={
+                  item.id === 'photos' && hashStatus.running
+                    ? t('all.matchingTabHint')
+                    : undefined
+                }
                 className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''}`}
                 onClick={() => setTab(item.id)}
               >
                 {t(item.label)}
+                {item.id === 'photos' && hashStatus.running && (
+                  <span
+                    className={allStyles.tabSpinner}
+                    aria-label={t('all.matchingTabHint')}
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -207,10 +254,14 @@ export const AllStatsView = ({
             />
           )}
           {tab === 'photos' && (
-            <PhotosTable
-              photos={combined.photos}
-              shoots={combined.shoots}
-              licenses={combined.assetLicenses}
+            <MergedPhotosTable
+              rows={mergedPhotos}
+              stocks={combined.activeStocks}
+              hashes={hashes}
+              hashStatus={hashStatus}
+              onRetryHashes={retryHashes}
+              onLinkAssets={assetMatches.linkAssets}
+              onUnlinkGroup={assetMatches.unlinkGroup}
             />
           )}
           {tab === 'years' && (

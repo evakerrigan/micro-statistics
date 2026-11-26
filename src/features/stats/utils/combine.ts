@@ -11,10 +11,10 @@ import {
   buildStats,
   type LicenseTotals,
   type MonthStat,
-  type PhotoStat,
   type ShootStat,
   type Stats,
 } from './aggregate';
+import type { StockPhotoPart } from './match-assets';
 import { shootTitle } from './shoot-labels';
 
 export const STOCK_NAME_KEYS: Record<StockId, MessageKey> = {
@@ -46,7 +46,7 @@ export type CombinedStats = {
   byLicense: LicenseTotals;
   months: MonthStat[];
   portfolioDates: string[];
-  photos: PhotoStat[];
+  photoParts: StockPhotoPart[];
   shoots: ShootStat[];
 };
 
@@ -79,7 +79,7 @@ export const combineAllStats = (
   const byLicense: LicenseTotals = {};
   const assetLicenseTotals: LicenseTotals = {};
   const monthMap = new Map<string, MonthStat>();
-  const allPhotos: PhotoStat[] = [];
+  const photoParts: StockPhotoPart[] = [];
   const allShoots: ShootStat[] = [];
   const portfolioDates: string[] = [];
 
@@ -143,10 +143,13 @@ export const combineAllStats = (
           (assetLicenseTotals[lic] ?? 0) + amount
         );
       }
-      allPhotos.push({
-        ...p,
+      const shootLabel =
+        (p.shootKey ? shootTitleByKey.get(p.shootKey) : undefined) ?? stockName;
+      photoParts.push({
         uid: `${stock}:${p.product.id}`,
-        shootKey: p.shootKey ? `${stock}:${p.shootKey}` : `${stock}:unmatched`,
+        stock,
+        photo: p,
+        shootLabel,
       });
     }
 
@@ -177,7 +180,7 @@ export const combineAllStats = (
     }
   }
 
-  allPhotos.sort((a, b) => b.revenue - a.revenue);
+  photoParts.sort((a, b) => b.photo.revenue - a.photo.revenue);
   portfolioDates.sort();
   const months = [...monthMap.values()].sort((a, b) =>
     a.key.localeCompare(b.key)
@@ -210,7 +213,7 @@ export const combineAllStats = (
     byLicense,
     months,
     portfolioDates,
-    photos: allPhotos,
+    photoParts,
     shoots: allShoots,
   };
 };

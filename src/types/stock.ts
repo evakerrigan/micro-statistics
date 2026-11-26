@@ -101,6 +101,28 @@ export type ShootMerges = Record<string, string>;
  */
 export type HiddenChartYears = Record<string, string[]>;
 
+/** Visual perceptual fingerprint of a portfolio thumbnail for cross-stock matching. */
+export type ImageFingerprint = {
+  /** Hash algorithm version so improvements trigger automatic recomputation. */
+  ver?: number;
+  /** 16-char hex: 64-bit horizontal gradient dHash. */
+  h: string;
+  /** 16-char hex: 64-bit vertical gradient dHash. */
+  v: string;
+  /** Mean RGB color [r, g, b], 0..255. */
+  rgb: [number, number, number];
+  /** Aspect ratio * 100 (e.g. 150 for 3:2). */
+  aspect: number;
+};
+
+/** User overrides for cross-stock photo/video matching on the "All" tab. */
+export type AssetMatchOverrides = {
+  /** Manually linked pairs `[uidA, uidB]`, where uid is `${stock}:${id}`. */
+  links: [string, string][];
+  /** Canonical sorted pair keys `"uidA|uidB"` the user explicitly unlinked. */
+  unlinks: string[];
+};
+
 export type Dataset = {
   /** ISO timestamp of the last successful sync. */
   syncedAt: string;

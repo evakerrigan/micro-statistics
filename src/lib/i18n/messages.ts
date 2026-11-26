@@ -30,6 +30,16 @@ export const en = {
   'all.stockSummary': '{sales} downloads · {sold} of {total} files sold',
   'all.empty':
     'No data loaded yet. Open Adobe Stock or Shutterstock tab to load your statistics.',
+  'all.matchingProgress': 'Matching identical files: {done} / {total}',
+  'all.matchingDoneNone': 'Cross-stock check finished · no matches',
+  'all.matchingPartial': '{n} previews could not be loaded',
+  'all.matchingRetry': 'Retry',
+  'all.matchingTabHint': 'Matching identical files across stocks…',
+  'all.matchedCount': 'Matched across stocks: {n}',
+  'all.unlinkFile': 'Separate',
+  'all.linkFile': 'Combine',
+  'all.linkFileLabel': 'File on another stock to combine with',
+  'all.linkPlaceholder': 'Combine with file from another stock…',
 
   'sync.quick': 'Update data',
   'sync.first': 'Load data',
@@ -247,6 +257,16 @@ export const ru: Messages = {
   'all.stockSummary': '{sales} загр. · продано {sold} из {total} файлов',
   'all.empty':
     'Данных пока нет. Откройте вкладку Adobe Stock или Shutterstock, чтобы загрузить статистику.',
+  'all.matchingProgress': 'Сверяю одинаковые файлы: {done} / {total}',
+  'all.matchingDoneNone': 'Проверка завершена · совпадений нет',
+  'all.matchingPartial': 'не удалось загрузить превью: {n}',
+  'all.matchingRetry': 'Повторить',
+  'all.matchingTabHint': 'Идёт сверка одинаковых файлов между стоками…',
+  'all.matchedCount': 'Объединено со всех стоков: {n}',
+  'all.unlinkFile': 'Разделить',
+  'all.linkFile': 'Объединить',
+  'all.linkFileLabel': 'Файл с другого стока для объединения',
+  'all.linkPlaceholder': 'Объединить с файлом на другом стоке…',
 
   'sync.quick': 'Обновить данные',
   'sync.first': 'Загрузить данные',
