@@ -34,7 +34,7 @@ const TABS: { id: 'months' | 'photos' | 'years'; label: MessageKey }[] = [
 
 type TabId = (typeof TABS)[number]['id'];
 
-const IMPLEMENTED_STOCKS = new Set<StockId>(['shutterstock']);
+const IMPLEMENTED_STOCKS = new Set<StockId>(['shutterstock', 'adobe']);
 
 export const AllStatsView = ({
   datasets,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from '@/hooks/use-i18n';
-import type { ManualShoot } from '@/types/shutterstock';
+import type { ManualShoot, StockId } from '@/types/stock';
 import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import type { ShootStat } from '../utils/aggregate';
@@ -15,6 +15,7 @@ import styles from './table.module.scss';
 import shootStyles from './shoots-table.module.scss';
 
 type ShootCardsProps = SortState & {
+  stock: StockId;
   /** Already sorted. */
   shoots: ShootStat[];
   /** Every shoot, for joining shoots together in the details. */
@@ -29,6 +30,7 @@ type ShootCardsProps = SortState & {
 
 /** The shoots table as cards, for narrow screens. */
 export const ShootCards = ({
+  stock,
   shoots,
   allShoots,
   licenses,
@@ -165,6 +167,7 @@ export const ShootCards = ({
               {isOpen && (
                 <div className={cardStyles.card__details}>
                   <ShootDetails
+                    stock={stock}
                     shoot={shoot}
                     shoots={allShoots}
                     {...detailsProps}

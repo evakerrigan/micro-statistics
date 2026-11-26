@@ -70,7 +70,8 @@ export const combineAllStats = (
         dataset,
         manualByStock[stock] ?? [],
         mergesByStock[stock] ?? {},
-        namesByStock[stock] ?? {}
+        namesByStock[stock] ?? {},
+        stock
       ),
     });
   }

@@ -5,7 +5,7 @@ import {
   MOBILE_QUERY,
   useMediaQuery,
 } from '@/hooks/use-media-query';
-import type { ManualShoot } from '@/types/shutterstock';
+import type { ManualShoot, StockId } from '@/types/stock';
 import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
@@ -25,6 +25,7 @@ import styles from './table.module.scss';
 import shootStyles from './shoots-table.module.scss';
 
 type ShootsTableProps = {
+  stock: StockId;
   shoots: ShootStat[];
   licenses: string[];
   manualShoots: ManualShoot[];
@@ -35,6 +36,7 @@ type ShootsTableProps = {
 };
 
 export const ShootsTable = ({
+  stock,
   shoots,
   licenses,
   manualShoots,
@@ -81,6 +83,7 @@ export const ShootsTable = ({
   if (mobile) {
     return (
       <ShootCards
+        stock={stock}
         shoots={sorted}
         allShoots={shoots}
         licenses={licenses}
@@ -241,6 +244,7 @@ export const ShootsTable = ({
                   <tr>
                     <td colSpan={columnCount} className={shootStyles.details}>
                       <ShootDetails
+                        stock={stock}
                         shoot={shoot}
                         manualShoots={manualShoots}
                         onManualShootsChange={onManualShootsChange}

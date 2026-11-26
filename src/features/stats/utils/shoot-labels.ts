@@ -14,13 +14,18 @@ const LICENSE_KEYS: Record<string, MessageKey> = {
   referrals: 'license.referrals',
   unlimited: 'license.unlimited',
   contest_award: 'license.contest_award',
+  adobe_subscription: 'license.adobe_subscription',
+  adobe_standard: 'license.adobe_standard',
+  adobe_custom: 'license.adobe_custom',
+  adobe_firefly: 'license.adobe_firefly',
+  adobe_other_payment: 'license.adobe_other_payment',
   [UNKNOWN_LICENSE]: 'license.other',
 };
 
 /** A shoot's name for display; «No shoot» is translated and date-shoots use formatted date unless renamed. */
 export const shootTitle = (shoot: ShootStat, t: Translate) => {
   if (shoot.kind === 'unmatched') return t('shoot.unmatched');
-  if (shoot.kind === 'shutterstock') {
+  if (shoot.kind === 'auto') {
     return shoot.customTitle || formatDate(shoot.uploadedAt);
   }
   return shoot.title;

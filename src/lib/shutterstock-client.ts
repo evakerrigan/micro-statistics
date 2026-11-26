@@ -6,15 +6,7 @@
  */
 
 export const SHUTTERSTOCK_ORIGIN = 'https://submit.shutterstock.com';
-export const SHUTTERSTOCK_PUBLIC_ORIGIN = 'https://www.shutterstock.com';
 const SHUTTERSTOCK_TAB_PATH = '/en/dashboard';
-
-export const assetPublicUrl = (id: string, mediaType: 'photo' | 'video') => {
-  if (!id) return '';
-  return mediaType === 'video'
-    ? `${SHUTTERSTOCK_PUBLIC_ORIGIN}/video/clip-${id}`
-    : `${SHUTTERSTOCK_PUBLIC_ORIGIN}/image/${id}`;
-};
 
 // Gentle pacing: short delay between requests plus adaptive backoff on 429/5xx.
 const REQUEST_DELAY_MIN_MS = 120;

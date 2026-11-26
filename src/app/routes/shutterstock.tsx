@@ -20,7 +20,7 @@ export const ShutterstockRoute = () => {
 
   return (
     <div className={styles.dashboard}>
-      <SyncPanel dataset={dataset} onSynced={setDataset} />
+      <SyncPanel stock="shutterstock" dataset={dataset} onSynced={setDataset} />
       {loaded && dataset && (
         <StatsView stock="shutterstock" dataset={dataset} />
       )}

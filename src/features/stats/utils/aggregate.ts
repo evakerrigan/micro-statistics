@@ -7,7 +7,8 @@ import type {
   ShootMerges,
   ShootNames,
   ShootPhoto,
-} from '@/types/shutterstock';
+  StockId,
+} from '@/types/stock';
 
 export type LicenseTotals = Record<string, number>;
 
@@ -25,11 +26,11 @@ export type PhotoStat = {
 };
 
 /**
- * - `shutterstock`: an automatic shoot grouped by upload date
+ * - `auto`: an automatic shoot grouped by upload date
  * - `manual`: a shoot the user created by hand
  * - `unmatched`: files without an upload date
  */
-export type ShootKind = 'shutterstock' | 'manual' | 'unmatched';
+export type ShootKind = 'auto' | 'manual' | 'unmatched';
 
 export type ShootStat = {
   key: string;
@@ -96,7 +97,8 @@ export type Stats = {
 export const UNKNOWN_LICENSE = 'other';
 export const UNMATCHED_KEY = 'unmatched';
 
-export const shutterstockShootKey = (id: string) => `shutterstock:${id}`;
+export const autoShootKey = (id: string, stock: StockId = 'shutterstock') =>
+  `${stock}:${id}`;
 export const manualShootKey = (id: string) => `manual:${id}`;
 
 const round = (n: number) => Math.round(n * 10000) / 10000;
@@ -121,7 +123,7 @@ export const compareAssetIds = (a: string, b: string) =>
   a.localeCompare(b, undefined, { numeric: true });
 
 /** Only automatic upload-date shoots can be joined; own shoots are edited directly. */
-export const isMergeable = (shoot: ShootStat) => shoot.kind === 'shutterstock';
+export const isMergeable = (shoot: ShootStat) => shoot.kind === 'auto';
 
 /** Sort key for “Uploaded”: shoot's upload date or earliest file upload date. */
 export const uploadedSortKey = (s: ShootStat) =>
@@ -214,14 +216,16 @@ export const buildStats = (
   dataset: Dataset,
   manualShoots: ManualShoot[] = [],
   shootMerges: ShootMerges = {},
-  shootNames: ShootNames = {}
+  shootNames: ShootNames = {},
+  stock: StockId = 'shutterstock'
 ): Stats => {
   const portfolioById = new Map(dataset.portfolio.map((p) => [p.id, p]));
+  const autoPrefix = `${stock}:`;
 
   // Priority: the user's manual assignment, then upload-date shoots.
   const shootKeyOf = new Map<string, string>();
   for (const shoot of dataset.shoots) {
-    const key = shutterstockShootKey(shoot.id);
+    const key = autoShootKey(shoot.id, stock);
     for (const id of shoot.photoIds) {
       shootKeyOf.set(id, key);
     }
@@ -312,7 +316,7 @@ export const buildStats = (
     photos.filter((p) => p.shootKey === key);
 
   const shoots = dataset.shoots.flatMap((shoot) => {
-    const key = shutterstockShootKey(shoot.id);
+    const key = autoShootKey(shoot.id, stock);
     // Files the user moved into an own shoot are no longer counted here.
     const ids = shoot.photoIds.filter((id) => shootKeyOf.get(id) === key);
     const shootPhotos = photosOf(key);
@@ -328,7 +332,7 @@ export const buildStats = (
     return makeShoot(
       {
         key,
-        kind: 'shutterstock',
+        kind: 'auto',
         manualId: null,
         title: shoot.title,
         customTitle,
@@ -350,7 +354,7 @@ export const buildStats = (
   const unsoldByKey = new Map<string | null, ShootPhoto[]>();
   for (const item of dataset.portfolio) {
     const key = shootKeyOf.get(item.id) ?? null;
-    if (soldIds.has(item.id) || key?.startsWith('shutterstock:')) continue;
+    if (soldIds.has(item.id) || key?.startsWith(autoPrefix)) continue;
     unsoldByKey.set(key, [
       ...(unsoldByKey.get(key) ?? []),
       portfolioToShootPhoto(item),

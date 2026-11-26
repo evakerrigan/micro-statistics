@@ -2,8 +2,8 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { useI18n } from '@/hooks/use-i18n';
-import { assetPublicUrl } from '@/lib/shutterstock-client';
-import type { ManualShoot, ShootPhoto } from '@/types/shutterstock';
+import { stockAssetUrl } from '@/lib/asset-url';
+import type { ManualShoot, ShootPhoto, StockId } from '@/types/stock';
 import { formatDate, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import {
@@ -23,6 +23,7 @@ import { shootTitle } from '../utils/shoot-labels';
 import styles from './shoot-details.module.scss';
 
 type ShootDetailsProps = {
+  stock: StockId;
   shoot: ShootStat;
   manualShoots: ManualShoot[];
   onManualShootsChange: (update: ManualShootsUpdate) => void;
@@ -37,7 +38,11 @@ const byAssetId = (a: PhotoStat, b: PhotoStat) =>
   compareAssetIds(a.product.id, b.product.id);
 
 /** An unsold file as a photo with no sales, to list it with the sold ones. */
-const unsoldAsPhoto = (photo: ShootPhoto, shootKey: string): PhotoStat => ({
+const unsoldAsPhoto = (
+  stock: StockId,
+  photo: ShootPhoto,
+  shootKey: string
+): PhotoStat => ({
   product: {
     id: photo.id,
     mediaType: photo.mediaType,
@@ -45,7 +50,7 @@ const unsoldAsPhoto = (photo: ShootPhoto, shootKey: string): PhotoStat => ({
     headline: photo.headline ?? '',
     createdAt: photo.publishedAt,
     thumbUrl: photo.thumbUrl ?? '',
-    url: assetPublicUrl(photo.id, photo.mediaType),
+    url: stockAssetUrl(stock, photo.id, photo.mediaType),
     sales: [],
   },
   shootKey,
@@ -88,11 +93,17 @@ const SoldCard = ({ photo }: { photo: PhotoStat }) => {
   );
 };
 
-const UnsoldCard = ({ photo }: { photo: ShootPhoto }) => {
+const UnsoldCard = ({
+  stock,
+  photo,
+}: {
+  stock: StockId;
+  photo: ShootPhoto;
+}) => {
   const { t } = useI18n();
   return (
     <a
-      href={assetPublicUrl(photo.id, photo.mediaType)}
+      href={stockAssetUrl(stock, photo.id, photo.mediaType)}
       target="_blank"
       rel="noreferrer"
       className={`${styles.card} ${styles.cardUnsold}`}
@@ -239,6 +250,7 @@ const MergeForm = ({
  * on inside an upload-date shoot to move selected files into an own shoot.
  */
 const EditableShootPhotos = ({
+  stock,
   shoot,
   manualShoots,
   onManualShootsChange,
@@ -246,7 +258,7 @@ const EditableShootPhotos = ({
   allowCreate = shoot.kind !== 'manual',
 }: Pick<
   ShootDetailsProps,
-  'shoot' | 'manualShoots' | 'onManualShootsChange'
+  'stock' | 'shoot' | 'manualShoots' | 'onManualShootsChange'
 > & {
   showHint?: boolean;
   allowCreate?: boolean;
@@ -261,9 +273,9 @@ const EditableShootPhotos = ({
   const allPhotos = useMemo(
     () => [
       ...shoot.photos,
-      ...shoot.unsoldPhotos.map((p) => unsoldAsPhoto(p, shoot.key)),
+      ...shoot.unsoldPhotos.map((p) => unsoldAsPhoto(stock, p, shoot.key)),
     ],
-    [shoot.photos, shoot.unsoldPhotos, shoot.key]
+    [stock, shoot.photos, shoot.unsoldPhotos, shoot.key]
   );
 
   const visible = useMemo(() => {
@@ -497,6 +509,7 @@ const EditableShootPhotos = ({
  * optionally ticking files to split into a custom shoot.
  */
 const UploadDateShootPhotos = ({
+  stock,
   shoot,
   shoots,
   manualShoots,
@@ -538,6 +551,7 @@ const UploadDateShootPhotos = ({
 
       {selecting ? (
         <EditableShootPhotos
+          stock={stock}
           shoot={shoot}
           manualShoots={manualShoots}
           onManualShootsChange={onManualShootsChange}
@@ -552,7 +566,7 @@ const UploadDateShootPhotos = ({
             <SoldCard key={photo.product.id} photo={photo} />
           ))}
           {shoot.unsoldPhotos.map((photo) => (
-            <UnsoldCard key={photo.id} photo={photo} />
+            <UnsoldCard key={photo.id} stock={stock} photo={photo} />
           ))}
         </div>
       )}
@@ -561,7 +575,7 @@ const UploadDateShootPhotos = ({
 };
 
 export const ShootDetails = (props: ShootDetailsProps) =>
-  props.shoot.kind === 'shutterstock' ? (
+  props.shoot.kind === 'auto' ? (
     <UploadDateShootPhotos {...props} />
   ) : (
     <EditableShootPhotos {...props} />

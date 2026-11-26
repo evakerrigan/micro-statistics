@@ -18,8 +18,8 @@ export const en = {
   'stock.shutterstock': 'Shutterstock',
   'stock.istock': 'iStock',
 
-  'adobe.comingSoon':
-    'Adobe Stock support (contributor.stock.adobe.com) will be added next.',
+  'adobe.empty':
+    'Open contributor.stock.adobe.com in this browser, log in and click “Load data”. The extension will collect your Adobe Stock portfolio (photos, illustrations, vectors and videos), all sales and Firefly bonuses.',
   'istock.comingSoon': 'iStock support will be added in a future update.',
 
   'all.stocksTitle': 'Microstocks',
@@ -29,7 +29,7 @@ export const en = {
   'all.soonHint': 'Support coming soon',
   'all.stockSummary': '{sales} downloads · {sold} of {total} files sold',
   'all.empty':
-    'No data loaded yet. Open the Shutterstock tab to load your statistics.',
+    'No data loaded yet. Open Adobe Stock or Shutterstock tab to load your statistics.',
 
   'sync.quick': 'Update data',
   'sync.first': 'Load data',
@@ -40,15 +40,24 @@ export const en = {
   'sync.extensionOnly': 'Updating works only in the installed extension.',
   'sync.keepOpen':
     'Keep this tab and the Shutterstock tab open while updating.',
+  'sync.adobeKeepOpen':
+    'Keep this tab and the Adobe Stock tab open while updating.',
   'sync.errorAuth':
     'Shutterstock returned no data. Make sure you are logged in at submit.shutterstock.com.',
   'sync.errorHttp': 'Shutterstock responded with error {status}.',
   'sync.errorFormat':
     'Shutterstock returned unexpected data — the site may have changed. Please tell the author.',
+  'sync.adobeErrorAuth':
+    'Adobe Stock returned no data. Make sure you are logged in at contributor.stock.adobe.com.',
+  'sync.adobeErrorHttp': 'Adobe Stock responded with error {status}.',
+  'sync.adobeErrorFormat':
+    'Adobe Stock returned unexpected data — the site may have changed. Please tell the author.',
   'progress.connect': 'Connecting to Shutterstock',
+  'progress.adobeConnect': 'Connecting to Adobe Stock',
   'progress.portfolio': 'Portfolio (photos & videos)',
   'progress.months': 'Monthly summaries',
   'progress.sales': 'Daily sales',
+  'progress.adobeSales': 'Sales history',
   'dashboard.empty':
     'Open submit.shutterstock.com in this browser, log in and click “Load data”. The extension will collect all your sales and portfolio (photos and videos). The first load may take a couple of minutes; later updates take seconds.',
 
@@ -64,7 +73,7 @@ export const en = {
   'stats.perSold': 'Avg. per sold file',
   'stats.perPortfolio': 'Per portfolio file',
   'stats.mismatch':
-    'Shutterstock shows lifetime earnings of {total}, but {collected} was collected ({diff} difference). Try updating again.',
+    '{stock} shows lifetime earnings of {total}, but {collected} was collected ({diff} difference). Try updating again.',
   'stats.unmatched':
     '{count} sold {count|file|files} worth {amount} {count|has|have} no upload date. Open the “No shoot” row, tick the files of one shoot and group them into your own shoot.',
   'tabs.shoots': 'By shoot',
@@ -83,6 +92,11 @@ export const en = {
   'license.referrals': 'Referrals',
   'license.unlimited': 'Unlimited',
   'license.contest_award': 'Prize',
+  'license.adobe_subscription': 'Subscription',
+  'license.adobe_standard': 'Standard',
+  'license.adobe_custom': 'Custom',
+  'license.adobe_firefly': 'Firefly Bonus',
+  'license.adobe_other_payment': 'Other payment',
   'license.other': 'Other',
 
   'media.all': 'All',
@@ -221,8 +235,8 @@ export const ru: Messages = {
   'stock.shutterstock': 'Shutterstock',
   'stock.istock': 'iStock',
 
-  'adobe.comingSoon':
-    'Поддержка Adobe Stock (contributor.stock.adobe.com) будет добавлена следующим шагом.',
+  'adobe.empty':
+    'Откройте contributor.stock.adobe.com в этом браузере, войдите в аккаунт и нажмите «Загрузить данные». Плагин соберёт портфолио Adobe Stock (фото, иллюстрации, векторы и видео), все продажи и бонусы Firefly.',
   'istock.comingSoon': 'Поддержка iStock появится в следующих обновлениях.',
 
   'all.stocksTitle': 'Микростоки',
@@ -232,7 +246,7 @@ export const ru: Messages = {
   'all.soonHint': 'Поддержка скоро появится',
   'all.stockSummary': '{sales} загр. · продано {sold} из {total} файлов',
   'all.empty':
-    'Данных пока нет. Откройте вкладку Shutterstock, чтобы загрузить статистику.',
+    'Данных пока нет. Откройте вкладку Adobe Stock или Shutterstock, чтобы загрузить статистику.',
 
   'sync.quick': 'Обновить данные',
   'sync.first': 'Загрузить данные',
@@ -244,15 +258,24 @@ export const ru: Messages = {
     'Обновление работает только в установленном расширении.',
   'sync.keepOpen':
     'Не закрывайте эту вкладку и вкладку Shutterstock, пока идёт обновление.',
+  'sync.adobeKeepOpen':
+    'Не закрывайте эту вкладку и вкладку Adobe Stock, пока идёт обновление.',
   'sync.errorAuth':
     'Shutterstock не вернул данные. Проверьте, что вы вошли в аккаунт автора на submit.shutterstock.com.',
   'sync.errorHttp': 'Shutterstock ответил ошибкой {status}.',
   'sync.errorFormat':
     'Ответ Shutterstock выглядит не так, как ожидалось — возможно, сайт изменился. Напишите, пожалуйста, автору.',
+  'sync.adobeErrorAuth':
+    'Adobe Stock не вернул данные. Проверьте, что вы вошли в аккаунт автора на contributor.stock.adobe.com.',
+  'sync.adobeErrorHttp': 'Adobe Stock ответил ошибкой {status}.',
+  'sync.adobeErrorFormat':
+    'Ответ Adobe Stock выглядит не так, как ожидалось — возможно, сайт изменился. Напишите, пожалуйста, автору.',
   'progress.connect': 'Подключаюсь к Shutterstock',
+  'progress.adobeConnect': 'Подключаюсь к Adobe Stock',
   'progress.portfolio': 'Портфолио (фото и видео)',
   'progress.months': 'Сводка по месяцам',
   'progress.sales': 'Продажи по дням',
+  'progress.adobeSales': 'История продаж',
   'dashboard.empty':
     'Откройте submit.shutterstock.com в этом браузере, войдите в аккаунт и нажмите «Загрузить данные». Плагин соберёт все продажи и портфолио (фото и видео). Первая загрузка может занять пару минут, последующие обновления проходят за секунды.',
 
@@ -268,7 +291,7 @@ export const ru: Messages = {
   'stats.perSold': 'Ср. доход с проданного файла',
   'stats.perPortfolio': 'КПД на 1 файл портфеля',
   'stats.mismatch':
-    'Shutterstock показывает общий доход {total}, а собрано {collected} (разница {diff}). Попробуйте обновить данные ещё раз.',
+    '{stock} показывает общий доход {total}, а собрано {collected} (разница {diff}). Попробуйте обновить данные ещё раз.',
   'stats.unmatched':
     '{count} проданных файлов на {amount} не имеют даты загрузки. Откройте строку «Без съёмки», отметьте файлы одной съёмки и соберите из них свою съёмку.',
   'tabs.shoots': 'По съёмкам',
@@ -287,6 +310,11 @@ export const ru: Messages = {
   'license.referrals': 'Рекомендации',
   'license.unlimited': 'Без ограничений',
   'license.contest_award': 'Приз',
+  'license.adobe_subscription': 'Подписка',
+  'license.adobe_standard': 'Стандартная',
+  'license.adobe_custom': 'Пользовательская',
+  'license.adobe_firefly': 'Бонус Firefly',
+  'license.adobe_other_payment': 'Прочие выплаты',
   'license.other': 'Другое',
 
   'media.all': 'Все',

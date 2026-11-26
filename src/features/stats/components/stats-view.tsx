@@ -7,6 +7,7 @@ import { useManualShoots } from '../hooks/use-manual-shoots';
 import { useShootMerges } from '../hooks/use-shoot-merges';
 import { useShootNames } from '../hooks/use-shoot-names';
 import { buildStats } from '../utils/aggregate';
+import { STOCK_NAME_KEYS } from '../utils/combine';
 import { licenseLabel } from '../utils/shoot-labels';
 import { MonthsView } from './months-view';
 import { PhotosTable } from './photos-table';
@@ -41,8 +42,9 @@ export const StatsView = ({
   const merges = useShootMerges(stock);
   const shootNames = useShootNames(stock);
   const stats = useMemo(
-    () => buildStats(dataset, manual.value, merges.value, shootNames.value),
-    [dataset, manual.value, merges.value, shootNames.value]
+    () =>
+      buildStats(dataset, manual.value, merges.value, shootNames.value, stock),
+    [dataset, manual.value, merges.value, shootNames.value, stock]
   );
   const ready = manual.ready && merges.ready && shootNames.ready;
 
@@ -135,6 +137,7 @@ export const StatsView = ({
       {Math.abs(missing) >= 0.02 && (
         <p className={styles.notice}>
           {t('stats.mismatch', {
+            stock: t(STOCK_NAME_KEYS[stock]),
             total: formatMoney(stats.shutterstockTotal),
             collected: formatMoney(stats.revenue),
             diff: formatMoney(missing),
@@ -167,6 +170,7 @@ export const StatsView = ({
 
       {tab === 'shoots' && (
         <ShootsTable
+          stock={stock}
           shoots={stats.shoots}
           licenses={stats.assetLicenses}
           manualShoots={manual.value}

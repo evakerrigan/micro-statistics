@@ -1,12 +1,13 @@
+import { stockAssetUrl } from '@/lib/asset-url';
 import {
-  assetPublicUrl,
   ShutterstockAuthError,
   ShutterstockFormatError,
   type ShutterstockSession,
 } from '@/lib/shutterstock-client';
-import type { MediaKind, PortfolioItem } from '@/types/shutterstock';
+import type { MediaKind, PortfolioItem } from '@/types/stock';
 
-export { assetPublicUrl };
+export const assetPublicUrl = (id: string, mediaType: MediaKind) =>
+  stockAssetUrl('shutterstock', id, mediaType);
 
 export const PORTFOLIO_PAGE_SIZE = 100;
 export const STATS_PAGE_SIZE = 500;

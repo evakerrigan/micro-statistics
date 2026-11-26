@@ -22,5 +22,8 @@
     "service_worker": "background.js"
   },
   "permissions": ["storage", "unlimitedStorage", "scripting"],
-  "host_permissions": ["https://submit.shutterstock.com/*"]
+  "host_permissions": [
+    "https://submit.shutterstock.com/*",
+    "https://contributor.stock.adobe.com/*"
+  ]
 }

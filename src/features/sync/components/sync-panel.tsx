@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/hooks/use-i18n';
+import {
+  AdobeAuthError,
+  AdobeFormatError,
+  AdobeHttpError,
+} from '@/lib/adobe-client';
 import type { Translate } from '@/lib/i18n';
 import {
   isExtensionContext,
@@ -12,39 +17,61 @@ import { saveDataset } from '@/lib/storage';
 import type { Dataset } from '@/types/stock';
 import { formatDate, formatTime } from '@/utils/format';
 import { collectDataset, type SyncProgress } from '../collect';
+import { collectAdobeDataset } from '../collect-adobe';
 import styles from './sync-panel.module.scss';
 
+export type SyncableStock = 'shutterstock' | 'adobe';
+
 type SyncPanelProps = {
+  stock?: SyncableStock;
   /** Data from the previous update, if any. */
   dataset: Dataset | null;
   onSynced: (dataset: Dataset) => void;
 };
 
-const progressLabel = (progress: SyncProgress, t: Translate) => {
+const progressLabel = (
+  progress: SyncProgress,
+  stock: SyncableStock,
+  t: Translate
+) => {
   switch (progress.step) {
     case 'connect':
-      return t('progress.connect');
+      return t(
+        stock === 'adobe' ? 'progress.adobeConnect' : 'progress.connect'
+      );
     case 'portfolio':
       return t('progress.portfolio');
     case 'months':
       return t('progress.months');
     case 'sales':
-      return t('progress.sales');
+      return t(stock === 'adobe' ? 'progress.adobeSales' : 'progress.sales');
   }
 };
 
-const errorMessage = (error: unknown, t: Translate) => {
+const errorMessage = (error: unknown, stock: SyncableStock, t: Translate) => {
   if (error instanceof ShutterstockAuthError) return t('sync.errorAuth');
+  if (error instanceof AdobeAuthError) return t('sync.adobeErrorAuth');
   if (error instanceof ShutterstockFormatError) {
     return `${t('sync.errorFormat')} (${error.message})`;
+  }
+  if (error instanceof AdobeFormatError) {
+    return `${t('sync.adobeErrorFormat')} (${error.message})`;
   }
   if (error instanceof ShutterstockHttpError) {
     return t('sync.errorHttp', { status: error.status });
   }
+  if (error instanceof AdobeHttpError) {
+    return t('sync.adobeErrorHttp', { status: error.status });
+  }
+  void stock;
   return error instanceof Error ? error.message : String(error);
 };
 
-export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
+export const SyncPanel = ({
+  stock = 'shutterstock',
+  dataset,
+  onSynced,
+}: SyncPanelProps) => {
   const { t } = useI18n();
   const syncedAt = dataset?.syncedAt ?? null;
   const [progress, setProgress] = useState<SyncProgress | null>(null);
@@ -54,8 +81,11 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
   const handleSync = async () => {
     setError(null);
     try {
-      const next = await collectDataset(setProgress, dataset);
-      await saveDataset(next, 'shutterstock');
+      const next =
+        stock === 'adobe'
+          ? await collectAdobeDataset(setProgress)
+          : await collectDataset(setProgress, dataset);
+      await saveDataset(next, stock);
       onSynced(next);
     } catch (e) {
       setError(e);
@@ -75,7 +105,9 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
     <section className={styles.syncPanel}>
       <div className={styles.syncPanel__row}>
         <div className={styles.syncPanel__heading}>
-          <h2 className={styles.syncPanel__title}>{t('stock.shutterstock')}</h2>
+          <h2 className={styles.syncPanel__title}>
+            {t(stock === 'adobe' ? 'stock.adobe' : 'stock.shutterstock')}
+          </h2>
           {!syncedAt && (
             <p className={styles.syncPanel__meta}>{t('sync.noData')}</p>
           )}
@@ -111,7 +143,7 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
       {progress && (
         <div className={styles.syncPanel__progress}>
           <div className={styles.syncPanel__progressLabel}>
-            <span>{progressLabel(progress, t)}</span>
+            <span>{progressLabel(progress, stock, t)}</span>
             {progress.total > 1 && (
               <span>
                 {progress.done} / {progress.total}
@@ -124,13 +156,15 @@ export const SyncPanel = ({ dataset, onSynced }: SyncPanelProps) => {
               style={{ width: `${percent}%` }}
             />
           </div>
-          <p className={styles.syncPanel__note}>{t('sync.keepOpen')}</p>
+          <p className={styles.syncPanel__note}>
+            {t(stock === 'adobe' ? 'sync.adobeKeepOpen' : 'sync.keepOpen')}
+          </p>
         </div>
       )}
 
       {error !== null && (
         <p role="alert" className={styles.syncPanel__error}>
-          {errorMessage(error, t)}
+          {errorMessage(error, stock, t)}
         </p>
       )}
     </section>
