@@ -27,6 +27,8 @@
     "https://*.picdn.net/*",
     "https://contributor.stock.adobe.com/*",
     "https://stock.adobe.com/*",
-    "https://*.ftcdn.net/*"
+    "https://*.ftcdn.net/*",
+    "https://*.gettyimages.com/*",
+    "https://*.istockphoto.com/*"
   ]
 }

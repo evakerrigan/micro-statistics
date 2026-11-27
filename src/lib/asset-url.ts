@@ -17,5 +17,8 @@ export const stockAssetUrl = (
       ? `${SHUTTERSTOCK_PUBLIC_ORIGIN}/video/clip-${id}`
       : `${SHUTTERSTOCK_PUBLIC_ORIGIN}/image/${id}`;
   }
+  if (stock === 'istock') {
+    return `https://www.istockphoto.com/search/2/image?phrase=${id}`;
+  }
   return '';
 };

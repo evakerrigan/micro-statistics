@@ -20,6 +20,8 @@ export const en = {
 
   'adobe.empty':
     'Open contributor.stock.adobe.com in this browser, log in and click “Load data”. The extension will collect your Adobe Stock portfolio (photos, illustrations, vectors and videos), all sales and Firefly bonuses.',
+  'istock.empty':
+    'Open esp.gettyimages.com and accountmanagement.gettyimages.com in this browser, log in and click “Load data”. The extension will collect your monthly royalty statements, recent downloads and portfolio metadata.',
   'istock.comingSoon': 'iStock support will be added in a future update.',
 
   'all.stocksTitle': 'Microstocks',
@@ -29,7 +31,7 @@ export const en = {
   'all.soonHint': 'Support coming soon',
   'all.stockSummary': '{sales} downloads · {sold} of {total} files sold',
   'all.empty':
-    'No data loaded yet. Open Adobe Stock or Shutterstock tab to load your statistics.',
+    'No data loaded yet. Open Adobe Stock, Shutterstock or iStock tab to load your statistics.',
   'all.matchingProgress': 'Matching identical files: {done} / {total}',
   'all.matchingDoneNone': 'Cross-stock check finished · no matches',
   'all.matchingPartial': '{n} previews could not be loaded',
@@ -52,6 +54,8 @@ export const en = {
     'Keep this tab and the Shutterstock tab open while updating.',
   'sync.adobeKeepOpen':
     'Keep this tab and the Adobe Stock tab open while updating.',
+  'sync.istockKeepOpen':
+    'Keep this tab and the Getty Images / ESP tabs open while updating.',
   'sync.errorAuth':
     'Shutterstock returned no data. Make sure you are logged in at submit.shutterstock.com.',
   'sync.errorHttp': 'Shutterstock responded with error {status}.',
@@ -62,8 +66,16 @@ export const en = {
   'sync.adobeErrorHttp': 'Adobe Stock responded with error {status}.',
   'sync.adobeErrorFormat':
     'Adobe Stock returned unexpected data — the site may have changed. Please tell the author.',
+  'sync.istockErrorAuthAccount':
+    'Getty Account Management returned no data. Make sure you are logged in at accountmanagement.gettyimages.com.',
+  'sync.istockErrorAuthEsp':
+    'Getty ESP returned no data. Make sure you are logged in at esp.gettyimages.com.',
+  'sync.istockErrorHttp': 'iStock / Getty responded with error {status}.',
+  'sync.istockErrorFormat':
+    'iStock / Getty returned unexpected data — the site may have changed. Please tell the author.',
   'progress.connect': 'Connecting to Shutterstock',
   'progress.adobeConnect': 'Connecting to Adobe Stock',
+  'progress.istockConnect': 'Connecting to iStock / Getty',
   'progress.portfolio': 'Portfolio (photos & videos)',
   'progress.months': 'Monthly summaries',
   'progress.sales': 'Daily sales',
@@ -114,6 +126,15 @@ export const en = {
   'license.adobe_firefly': 'Firefly Bonus',
   'license.adobe_other_payment': 'Other payment',
   'license.adobe_historical': 'Earlier (>3 yr)',
+  'license.istock_subscription': 'Subscription',
+  'license.istock_premium_access': 'Premium Access',
+  'license.istock_credit': 'Credit Pack',
+  'license.istock_rf': 'Royalty Free',
+  'license.istock_partner': 'Partner Portal',
+  'license.istock_connect': 'Connect',
+  'license.istock_editorial': 'Editorial',
+  'license.istock_pending': 'Current month (pending)',
+  'license.istock_other': 'Other (iStock)',
   'license.other': 'Other',
 
   'media.all': 'All',
@@ -255,6 +276,8 @@ export const ru: Messages = {
 
   'adobe.empty':
     'Откройте contributor.stock.adobe.com в этом браузере, войдите в аккаунт и нажмите «Загрузить данные». Плагин соберёт портфолио Adobe Stock (фото, иллюстрации, векторы и видео), все продажи и бонусы Firefly.',
+  'istock.empty':
+    'Откройте esp.gettyimages.com и accountmanagement.gettyimages.com в этом браузере, войдите в аккаунт и нажмите «Загрузить данные». Плагин соберёт помесячные отчёты о роялти, свежие скачивания и метаданные портфолио.',
   'istock.comingSoon': 'Поддержка iStock появится в следующих обновлениях.',
 
   'all.stocksTitle': 'Микростоки',
@@ -264,7 +287,7 @@ export const ru: Messages = {
   'all.soonHint': 'Поддержка скоро появится',
   'all.stockSummary': '{sales} загр. · продано {sold} из {total} файлов',
   'all.empty':
-    'Данных пока нет. Откройте вкладку Adobe Stock или Shutterstock, чтобы загрузить статистику.',
+    'Данных пока нет. Откройте вкладку Adobe Stock, Shutterstock или iStock, чтобы загрузить статистику.',
   'all.matchingProgress': 'Сверяю одинаковые файлы: {done} / {total}',
   'all.matchingDoneNone': 'Проверка завершена · совпадений нет',
   'all.matchingPartial': 'не удалось загрузить превью: {n}',
@@ -288,6 +311,8 @@ export const ru: Messages = {
     'Не закрывайте эту вкладку и вкладку Shutterstock, пока идёт обновление.',
   'sync.adobeKeepOpen':
     'Не закрывайте эту вкладку и вкладку Adobe Stock, пока идёт обновление.',
+  'sync.istockKeepOpen':
+    'Не закрывайте эту вкладку и вкладки Getty Images / ESP, пока идёт обновление.',
   'sync.errorAuth':
     'Shutterstock не вернул данные. Проверьте, что вы вошли в аккаунт автора на submit.shutterstock.com.',
   'sync.errorHttp': 'Shutterstock ответил ошибкой {status}.',
@@ -298,8 +323,16 @@ export const ru: Messages = {
   'sync.adobeErrorHttp': 'Adobe Stock ответил ошибкой {status}.',
   'sync.adobeErrorFormat':
     'Ответ Adobe Stock выглядит не так, как ожидалось — возможно, сайт изменился. Напишите, пожалуйста, автору.',
+  'sync.istockErrorAuthAccount':
+    'Getty Account Management не вернул данные. Проверьте, что вы вошли на accountmanagement.gettyimages.com.',
+  'sync.istockErrorAuthEsp':
+    'Getty ESP не вернул данные. Проверьте, что вы вошли на esp.gettyimages.com.',
+  'sync.istockErrorHttp': 'iStock / Getty ответил ошибкой {status}.',
+  'sync.istockErrorFormat':
+    'Ответ iStock / Getty выглядит не так, как ожидалось — возможно, сайт изменился. Напишите, пожалуйста, автору.',
   'progress.connect': 'Подключаюсь к Shutterstock',
   'progress.adobeConnect': 'Подключаюсь к Adobe Stock',
+  'progress.istockConnect': 'Подключаюсь к iStock / Getty',
   'progress.portfolio': 'Портфолио (фото и видео)',
   'progress.months': 'Сводка по месяцам',
   'progress.sales': 'Продажи по дням',
@@ -350,6 +383,15 @@ export const ru: Messages = {
   'license.adobe_firefly': 'Бонус Firefly',
   'license.adobe_other_payment': 'Прочие выплаты',
   'license.adobe_historical': 'Ранее (>3 лет)',
+  'license.istock_subscription': 'Подписка',
+  'license.istock_premium_access': 'Premium Access',
+  'license.istock_credit': 'Пакеты кредитов',
+  'license.istock_rf': 'Royalty Free',
+  'license.istock_partner': 'Партнёрские порталы',
+  'license.istock_connect': 'Connect',
+  'license.istock_editorial': 'Editorial',
+  'license.istock_pending': 'Текущий месяц (без суммы)',
+  'license.istock_other': 'Другое (iStock)',
   'license.other': 'Другое',
 
   'media.all': 'Все',
