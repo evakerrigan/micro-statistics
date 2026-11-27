@@ -10,6 +10,7 @@ import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import { type SortAccessors, useSort } from '../hooks/use-sort';
 import { uploadedSortKey, type ShootStat } from '../utils/aggregate';
+import { STOCK_NAME_KEYS } from '../utils/combine';
 import {
   isDenseLicenseTable,
   licenseColumnCount,
@@ -33,7 +34,9 @@ import shootStyles from './shoots-table.module.scss';
 type ShootsTableProps = {
   stock: StockId | 'all';
   shoots: ShootStat[];
-  licenses: string[];
+  licenses?: string[];
+  /** When set (on the All tab), shows per-stock columns + lastSale and hides perPhoto. */
+  stocks?: StockId[];
   manualShoots?: ManualShoot[];
   onManualShootsChange?: (update: ManualShootsUpdate) => void;
   onMergeShoot?: (source: string, target: string) => void;
@@ -42,10 +45,13 @@ type ShootsTableProps = {
   readOnly?: boolean;
 };
 
+const shootStockOf = (shootKey: string): string => shootKey.split(':')[0] ?? '';
+
 export const ShootsTable = ({
   stock,
   shoots,
-  licenses,
+  licenses = [],
+  stocks,
   manualShoots,
   onManualShootsChange,
   onMergeShoot,
@@ -57,6 +63,15 @@ export const ShootsTable = ({
   const compact = useMediaQuery(COMPACT_QUERY);
   const mobile = useMediaQuery(MOBILE_QUERY);
   const [openKey, setOpenKey] = useState<string | null>(null);
+
+  const isAllMode = Boolean(stocks);
+  const columns = stocks ?? licenses;
+  const formatColumn = stocks
+    ? (key: string) =>
+        key in STOCK_NAME_KEYS ? t(STOCK_NAME_KEYS[key as StockId]) : key
+    : undefined;
+  const rowTotals = (s: ShootStat) =>
+    stocks ? { [shootStockOf(s.key)]: s.revenue } : s.byLicense;
 
   const accessors = useMemo<SortAccessors<ShootStat>>(
     () => ({
@@ -71,14 +86,20 @@ export const ShootsTable = ({
       sales: (s) => s.salesCount,
       revenue: (s) => s.revenue,
       perPhoto: (s) => s.revenuePerPhoto ?? -1,
+      lastSale: (s) => s.lastSale ?? '',
       ...Object.fromEntries(
-        licenses.map((l) => [
+        columns.map((l) => [
           `license:${l}`,
-          (s: ShootStat) => s.byLicense[l] ?? 0,
+          (s: ShootStat) =>
+            stocks
+              ? shootStockOf(s.key) === l
+                ? s.revenue
+                : 0
+              : (s.byLicense[l] ?? 0),
         ])
       ),
     }),
-    [licenses, t]
+    [columns, stocks, t]
   );
   const { sorted, sortKey, direction, toggle } = useSort(
     shoots,
@@ -86,7 +107,7 @@ export const ShootsTable = ({
     'revenue'
   );
   const header = { sortKey, direction, onSort: toggle };
-  const columnCount = 7 + licenseColumnCount(licenses, compact);
+  const columnCount = 7 + licenseColumnCount(columns, compact);
 
   if (mobile) {
     return (
@@ -94,7 +115,8 @@ export const ShootsTable = ({
         stock={stock}
         shoots={sorted}
         allShoots={shoots}
-        licenses={licenses}
+        licenses={columns}
+        stocks={stocks}
         manualShoots={manualShoots}
         onManualShootsChange={onManualShootsChange}
         onMergeShoot={onMergeShoot}
@@ -109,7 +131,7 @@ export const ShootsTable = ({
   return (
     <TableWrap>
       <table
-        className={`${styles.table} ${isDenseLicenseTable(licenses, compact) ? styles.table__dense : ''}`}
+        className={`${styles.table} ${isDenseLicenseTable(columns, compact) ? styles.table__dense : ''}`}
       >
         <thead>
           <tr>
@@ -159,13 +181,27 @@ export const ShootsTable = ({
               className={styles.table__revenue}
               {...header}
             />
-            <SortHeader
-              label={t('shoots.col.perPhoto')}
-              columnKey="perPhoto"
-              numeric
+            {!isAllMode && (
+              <SortHeader
+                label={t('shoots.col.perPhoto')}
+                columnKey="perPhoto"
+                numeric
+                {...header}
+              />
+            )}
+            <LicenseHeaders
+              licenses={columns}
+              compact={compact}
+              formatLabel={formatColumn}
               {...header}
             />
-            <LicenseHeaders licenses={licenses} compact={compact} {...header} />
+            {isAllMode && (
+              <SortHeader
+                label={t('photos.col.lastSale')}
+                columnKey="lastSale"
+                {...header}
+              />
+            )}
           </tr>
         </thead>
         <tbody>
@@ -238,17 +274,24 @@ export const ShootsTable = ({
                   >
                     {formatPartialRevenue(shoot, formatMoney)}
                   </td>
-                  <td className={styles.table__num}>
-                    {shoot.revenuePerPhoto === null || isHistoricalOnly(shoot)
-                      ? '—'
-                      : formatMoney(shoot.revenuePerPhoto)}
-                  </td>
+                  {!isAllMode && (
+                    <td className={styles.table__num}>
+                      {shoot.revenuePerPhoto === null || isHistoricalOnly(shoot)
+                        ? '—'
+                        : formatMoney(shoot.revenuePerPhoto)}
+                    </td>
+                  )}
                   <LicenseCells
-                    licenses={licenses}
-                    byLicense={shoot.byLicense}
+                    licenses={columns}
+                    byLicense={rowTotals(shoot)}
                     compact={compact}
                     sortKey={sortKey}
                   />
+                  {isAllMode && (
+                    <td className={styles.table__date}>
+                      {formatDate(shoot.lastSale)}
+                    </td>
+                  )}
                 </tr>
                 {isOpen && (
                   <tr>

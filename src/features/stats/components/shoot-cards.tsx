@@ -4,6 +4,7 @@ import type { ManualShoot, StockId } from '@/types/stock';
 import { formatDate, formatDuration, formatMoney } from '@/utils/format';
 import type { ManualShootsUpdate } from '../hooks/use-manual-shoots';
 import type { ShootStat } from '../utils/aggregate';
+import { STOCK_NAME_KEYS } from '../utils/combine';
 import { licenseSortKey } from '../utils/license-columns';
 import {
   formatPartialRevenue,
@@ -28,6 +29,7 @@ type ShootCardsProps = SortState & {
   /** Every shoot, for joining shoots together in the details. */
   allShoots: ShootStat[];
   licenses: string[];
+  stocks?: StockId[];
   manualShoots?: ManualShoot[];
   onManualShootsChange?: (update: ManualShootsUpdate) => void;
   onMergeShoot?: (source: string, target: string) => void;
@@ -42,6 +44,7 @@ export const ShootCards = ({
   shoots,
   allShoots,
   licenses,
+  stocks,
   sortKey,
   direction,
   onSort,
@@ -49,10 +52,17 @@ export const ShootCards = ({
 }: ShootCardsProps) => {
   const { t } = useI18n();
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const isAllMode = Boolean(stocks);
+  const labelOf = (key: string) =>
+    stocks && key in STOCK_NAME_KEYS
+      ? t(STOCK_NAME_KEYS[key as StockId])
+      : licenseLabel(key, t);
 
   const options = [
     { label: t('col.revenue'), columnKey: 'revenue' },
-    { label: t('shoots.col.perPhoto'), columnKey: 'perPhoto' },
+    ...(isAllMode
+      ? [{ label: t('photos.col.lastSale'), columnKey: 'lastSale' }]
+      : [{ label: t('shoots.col.perPhoto'), columnKey: 'perPhoto' }]),
     { label: t('col.sales'), columnKey: 'sales' },
     { label: t('shoots.col.published'), columnKey: 'published' },
     { label: t('shoots.col.sold'), columnKey: 'sold' },
@@ -60,7 +70,7 @@ export const ShootCards = ({
     { label: t('shoots.col.onSale'), columnKey: 'onSale' },
     { label: t('col.shoot'), columnKey: 'title' },
     ...licenses.map((l) => ({
-      label: licenseLabel(l, t),
+      label: labelOf(l),
       columnKey: licenseSortKey(l),
     })),
   ];
@@ -119,15 +129,24 @@ export const ShootCards = ({
                   />
                 </div>
                 <div className={cardStyles.card__stats}>
-                  <CardStat
-                    label={t('shoots.col.perPhoto')}
-                    value={
-                      shoot.revenuePerPhoto === null || isHistoricalOnly(shoot)
-                        ? '—'
-                        : formatMoney(shoot.revenuePerPhoto)
-                    }
-                    highlighted={sorted('perPhoto')}
-                  />
+                  {isAllMode ? (
+                    <CardStat
+                      label={t('photos.col.lastSale')}
+                      value={formatDate(shoot.lastSale)}
+                      highlighted={sorted('lastSale')}
+                    />
+                  ) : (
+                    <CardStat
+                      label={t('shoots.col.perPhoto')}
+                      value={
+                        shoot.revenuePerPhoto === null ||
+                        isHistoricalOnly(shoot)
+                          ? '—'
+                          : formatMoney(shoot.revenuePerPhoto)
+                      }
+                      highlighted={sorted('perPhoto')}
+                    />
+                  )}
                   <CardStat
                     label={t('col.sales')}
                     value={shoot.salesCount}
@@ -158,18 +177,21 @@ export const ShootCards = ({
                   <div
                     className={`${cardStyles.card__stats} ${cardStyles.card__partners}`}
                   >
-                    {licenses.map((l) => (
-                      <CardStat
-                        key={l}
-                        label={licenseLabel(l, t)}
-                        value={
-                          shoot.byLicense[l]
-                            ? formatMoney(shoot.byLicense[l])
-                            : '—'
-                        }
-                        highlighted={sorted(licenseSortKey(l))}
-                      />
-                    ))}
+                    {licenses.map((l) => {
+                      const amount = stocks
+                        ? shoot.key.split(':')[0] === l
+                          ? shoot.revenue
+                          : 0
+                        : (shoot.byLicense[l] ?? 0);
+                      return (
+                        <CardStat
+                          key={l}
+                          label={labelOf(l)}
+                          value={amount ? formatMoney(amount) : '—'}
+                          highlighted={sorted(licenseSortKey(l))}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>

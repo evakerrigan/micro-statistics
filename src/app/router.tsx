@@ -15,7 +15,7 @@ export const router = createHashRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/shutterstock" replace />,
+        element: <Navigate to="/adobe" replace />,
       },
       {
         path: 'adobe',

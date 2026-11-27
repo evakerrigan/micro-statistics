@@ -293,7 +293,7 @@ export const AllStatsView = ({
             <ShootsTable
               stock="all"
               shoots={combined.shoots}
-              licenses={combined.assetLicenses}
+              stocks={combined.activeStocks}
               readOnly
             />
           )}
