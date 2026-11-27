@@ -24,8 +24,8 @@ const TABS: {
   id: 'shoots' | 'photos' | 'months' | 'years';
   label: MessageKey;
 }[] = [
-  { id: 'shoots', label: 'tabs.shoots' },
   { id: 'photos', label: 'tabs.photos' },
+  { id: 'shoots', label: 'tabs.shoots' },
   { id: 'months', label: 'tabs.months' },
   { id: 'years', label: 'tabs.years' },
 ];
@@ -37,7 +37,7 @@ export const StatsView = ({
   dataset,
 }: StatsViewProps) => {
   const { t } = useI18n();
-  const [tab, setTab] = useState<TabId>('shoots');
+  const [tab, setTab] = useState<TabId>('photos');
   const manual = useManualShoots(stock);
   const merges = useShootMerges(stock);
   const shootNames = useShootNames(stock);

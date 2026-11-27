@@ -34,8 +34,8 @@ const TABS: {
   id: 'shoots' | 'photos' | 'months' | 'years';
   label: MessageKey;
 }[] = [
-  { id: 'shoots', label: 'tabs.shoots' },
   { id: 'photos', label: 'tabs.photos' },
+  { id: 'shoots', label: 'tabs.shoots' },
   { id: 'months', label: 'tabs.months' },
   { id: 'years', label: 'tabs.years' },
 ];
@@ -55,7 +55,7 @@ export const AllStatsView = ({
   namesByStock,
 }: AllStatsViewProps) => {
   const { t } = useI18n();
-  const [tab, setTab] = useState<TabId>('shoots');
+  const [tab, setTab] = useState<TabId>('photos');
   const assetMatches = useAssetMatches();
 
   const combined = useMemo(
