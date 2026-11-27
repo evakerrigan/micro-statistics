@@ -1,6 +1,12 @@
 import { stockAssetUrl } from '@/lib/asset-url';
 import { openIstockSession } from '@/lib/istock-client';
-import { loadSyncCache, saveSyncCache } from '@/lib/storage';
+import {
+  type CachedAssetMeta,
+  loadIstockAssetMeta,
+  loadSyncCache,
+  saveIstockAssetMeta,
+  saveSyncCache,
+} from '@/lib/storage';
 import type {
   CachedAssetSale,
   Dataset,
@@ -23,6 +29,7 @@ import {
   fetchEspCurrentUser,
   fetchEspDownloadsPage,
   fetchEspStatsMonths,
+  fetchGettyAdpMetadata,
   type GettyTsvRow,
   mediaKindFromGettyType,
   parseGettyTsv,
@@ -31,7 +38,7 @@ import type { SyncProgress } from './collect';
 
 type OnProgress = (progress: SyncProgress) => void;
 
-const CACHE_SIGNATURE = 'tsv-v1';
+const CACHE_SIGNATURE = 'tsv-v2';
 const CONCURRENCY = 3;
 const CHECKPOINT_EVERY = 10;
 const ADP_CHUNK_SIZE = 50;
@@ -168,7 +175,7 @@ export const collectIstockDataset = async (
         earnings += row.grossRoyaltyUsd;
         downloads += count;
 
-        if (!row.assetId) {
+        if (!row.assetId || !/^\d+$/.test(row.assetId)) {
           monthOther.push({
             date: row.salesDate,
             amount: round6(row.grossRoyaltyUsd),
@@ -472,19 +479,115 @@ export const collectIstockDataset = async (
       product.sales.push(...sales);
     }
 
-    // 5. Enrich sold products with public ADP URLs from ESP
+    // 5. Enrich sold products with public ADP URLs from ESP & cached/public Getty metadata
+    const assetMetaCache: Record<string, CachedAssetMeta> =
+      await loadIstockAssetMeta();
+    let assetMetaDirty = false;
+
+    for (const [id, prod] of productMap.entries()) {
+      const cachedMeta = assetMetaCache[id];
+      if (!cachedMeta) continue;
+      if (!prod.createdAt && cachedMeta.createdAt) {
+        prod.createdAt = cachedMeta.createdAt;
+      }
+      if (!prod.thumbUrl && cachedMeta.thumbUrl) {
+        prod.thumbUrl = cachedMeta.thumbUrl;
+      }
+      if (!prod.headline && cachedMeta.headline) {
+        prod.headline = cachedMeta.headline;
+      }
+      if (cachedMeta.url) {
+        prod.url = cachedMeta.url;
+      }
+      const existing = metaById.get(id);
+      if (existing) {
+        if (!existing.createdAt && cachedMeta.createdAt) {
+          existing.createdAt = cachedMeta.createdAt;
+        }
+        if (!existing.thumbUrl && cachedMeta.thumbUrl) {
+          existing.thumbUrl = cachedMeta.thumbUrl;
+        }
+        if (!existing.headline && cachedMeta.headline) {
+          existing.headline = cachedMeta.headline;
+        }
+      }
+    }
+
     const productIds = [...productMap.keys()];
+    const gettyUrlsById = new Map<string, string>();
     for (let i = 0; i < productIds.length; i += ADP_CHUNK_SIZE) {
       const chunk = productIds.slice(i, i + ADP_CHUNK_SIZE);
       try {
         const adpUrls = await fetchEspAdpUrls(session, chunk);
-        for (const [id, url] of adpUrls.entries()) {
+        for (const [id, urls] of adpUrls.entries()) {
           const prod = productMap.get(id);
-          if (prod && url) prod.url = url;
+          const publicUrl = urls.istockUrl || urls.gettyUrl;
+          if (prod && publicUrl) prod.url = publicUrl;
+          if (urls.gettyUrl) gettyUrlsById.set(id, urls.gettyUrl);
         }
       } catch {
         // Non-fatal: fallback URL is already set.
       }
+    }
+
+    const toEnrich = productIds.filter((id) => {
+      const prod = productMap.get(id)!;
+      if (prod.createdAt && prod.thumbUrl) return false;
+      return gettyUrlsById.has(id);
+    });
+
+    if (toEnrich.length > 0) {
+      onProgress({ step: 'portfolio', done: 0, total: toEnrich.length });
+      let doneEnrich = 0;
+      await runPool(toEnrich, 6, async (id) => {
+        const gettyUrl = gettyUrlsById.get(id)!;
+        const parsed = await fetchGettyAdpMetadata(gettyUrl, id);
+        if (parsed) {
+          const prod = productMap.get(id)!;
+          if (!prod.createdAt && parsed.createdAt) {
+            prod.createdAt = parsed.createdAt;
+          }
+          if (!prod.thumbUrl && parsed.thumbUrl) {
+            prod.thumbUrl = parsed.thumbUrl;
+          }
+          if (!prod.headline && parsed.headline) {
+            prod.headline = parsed.headline;
+          }
+          const existing = metaById.get(id);
+          if (existing) {
+            if (!existing.createdAt && parsed.createdAt) {
+              existing.createdAt = parsed.createdAt;
+            }
+            if (!existing.thumbUrl && parsed.thumbUrl) {
+              existing.thumbUrl = parsed.thumbUrl;
+            }
+            if (!existing.headline && parsed.headline) {
+              existing.headline = parsed.headline;
+            }
+          }
+          assetMetaCache[id] = {
+            createdAt: prod.createdAt,
+            thumbUrl: prod.thumbUrl,
+            headline: prod.headline,
+            url: prod.url,
+          };
+          assetMetaDirty = true;
+        }
+        doneEnrich++;
+        if (doneEnrich % 25 === 0 && assetMetaDirty) {
+          await saveIstockAssetMeta(assetMetaCache);
+          assetMetaDirty = false;
+        }
+        onProgress({
+          step: 'portfolio',
+          done: doneEnrich,
+          total: toEnrich.length,
+        });
+      });
+    }
+
+    if (assetMetaDirty) {
+      await saveIstockAssetMeta(assetMetaCache);
     }
 
     // 6. Portfolio & shoots

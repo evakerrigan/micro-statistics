@@ -376,21 +376,124 @@ type RawAdpEntry = {
   istock_adp?: string;
 };
 
+export type EspAdpUrls = {
+  istockUrl: string;
+  gettyUrl: string;
+};
+
 export const fetchEspAdpUrls = async (
   session: IstockSession,
   masterIds: string[]
-): Promise<Map<string, string>> => {
-  const map = new Map<string, string>();
+): Promise<Map<string, EspAdpUrls>> => {
+  const map = new Map<string, EspAdpUrls>();
   if (masterIds.length === 0) return map;
   const res = await session.getEspJson<Record<string, RawAdpEntry>>(
     `/api/submission/v1/asset_details/adp_urls?master_ids=${encodeURIComponent(masterIds.join(','))}`
   );
   if (!res || typeof res !== 'object') return map;
   for (const [id, entry] of Object.entries(res)) {
-    const url = entry?.istock_adp || entry?.getty_images_adp || '';
-    if (url) map.set(id, url);
+    const istockUrl = entry?.istock_adp ?? '';
+    const gettyUrl = entry?.getty_images_adp ?? '';
+    if (istockUrl || gettyUrl) {
+      map.set(id, { istockUrl, gettyUrl });
+    }
   }
   return map;
+};
+
+const FULL_MONTHS: Record<string, string> = {
+  january: '01',
+  february: '02',
+  march: '03',
+  april: '04',
+  may: '05',
+  june: '06',
+  july: '07',
+  august: '08',
+  september: '09',
+  october: '10',
+  november: '11',
+  december: '12',
+};
+
+const parseEnglishDate = (raw: string): string | null => {
+  const m = /^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/.exec(raw.trim());
+  if (!m) return null;
+  const mm = FULL_MONTHS[m[1].toLowerCase()];
+  if (!mm) return null;
+  return `${m[3]}-${mm}-${m[2].padStart(2, '0')}`;
+};
+
+const decodeHtmlAttr = (raw: string) =>
+  raw
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .trim();
+
+export const fetchGettyAdpMetadata = async (
+  gettyUrl: string,
+  assetId: string
+): Promise<{
+  createdAt: string | null;
+  thumbUrl: string;
+  headline: string;
+} | null> => {
+  try {
+    const res = await fetch(gettyUrl, { credentials: 'omit' });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    let thumbUrl = '';
+    const ogMatch =
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i.exec(
+        html
+      ) ??
+      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(
+        html
+      ) ??
+      /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i.exec(
+        html
+      );
+    if (ogMatch?.[1]) {
+      thumbUrl = decodeHtmlAttr(ogMatch[1]);
+    } else if (assetId) {
+      const mediaMatch = new RegExp(
+        `https://media\\.gettyimages\\.com/id/${assetId}/[^"'\\s<>]+`,
+        'i'
+      ).exec(html);
+      if (mediaMatch?.[0]) thumbUrl = decodeHtmlAttr(mediaMatch[0]);
+    }
+
+    let createdAt: string | null = null;
+    const jsonDateMatch =
+      /"(?:uploadDate|datePublished|dateCreated)"\s*:\s*"(\d{4}-\d{2}-\d{2})/i.exec(
+        html
+      );
+    if (jsonDateMatch?.[1]) {
+      createdAt = jsonDateMatch[1];
+    } else {
+      const textDateMatch =
+        /Upload date[^A-Za-z0-9]{0,160}([A-Z][a-z]+\s+\d{1,2},\s*\d{4})/i.exec(
+          html
+        );
+      if (textDateMatch?.[1]) {
+        createdAt = parseEnglishDate(textDateMatch[1]);
+      }
+    }
+
+    let headline = '';
+    const h1Match = /<h1[^>]*>([^<]+)<\/h1>/i.exec(html);
+    if (h1Match?.[1]) {
+      headline = decodeHtmlAttr(h1Match[1])
+        .replace(/\s*-\s*stock\s+(?:photo|illustration|video)\s*$/i, '')
+        .trim();
+    }
+
+    if (!thumbUrl && !createdAt && !headline) return null;
+    return { createdAt, thumbUrl, headline };
+  } catch {
+    return null;
+  }
 };
 
 type RawBatchesResponse = {

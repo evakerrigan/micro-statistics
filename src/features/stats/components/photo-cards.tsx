@@ -65,12 +65,16 @@ export const PhotoCards = ({
             className={cardStyles.card}
           >
             <div className={cardStyles.card__head}>
-              <img
-                src={photo.product.thumbUrl}
-                alt=""
-                loading="lazy"
-                className={styles.table__thumb}
-              />
+              {photo.product.thumbUrl ? (
+                <img
+                  src={photo.product.thumbUrl}
+                  alt=""
+                  loading="lazy"
+                  className={styles.table__thumb}
+                />
+              ) : (
+                <div className={styles.table__thumb} />
+              )}
               <div className={cardStyles.card__text}>
                 <div>
                   <a

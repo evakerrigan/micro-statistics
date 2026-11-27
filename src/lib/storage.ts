@@ -19,6 +19,7 @@ const SHOOT_MERGES_BASE = 'shootMerges';
 const SHOOT_NAMES_BASE = 'shootNames';
 const HIDDEN_CHART_YEARS_BASE = 'hiddenChartYears';
 const SYNC_CACHE_BASE = 'syncCache';
+const ASSET_META_BASE = 'assetMeta';
 const IMAGE_HASHES_KEY = 'all:imageHashes';
 const ASSET_MATCH_OVERRIDES_KEY = 'all:assetMatches';
 
@@ -163,6 +164,20 @@ export const loadAllDatasets = async (): Promise<
   return result;
 };
 
+export type CachedAssetMeta = {
+  createdAt: string | null;
+  thumbUrl: string;
+  headline?: string;
+  url?: string;
+};
+
+export const loadIstockAssetMeta = async () =>
+  (await read<Record<string, CachedAssetMeta>>('istock', ASSET_META_BASE)) ??
+  {};
+
+export const saveIstockAssetMeta = (meta: Record<string, CachedAssetMeta>) =>
+  write('istock', ASSET_META_BASE, meta);
+
 /** Removes all stored data for a single microstock. */
 export const clearStockData = async (stock: StockId): Promise<void> => {
   const bases = [
@@ -172,6 +187,7 @@ export const clearStockData = async (stock: StockId): Promise<void> => {
     SHOOT_NAMES_BASE,
     HIDDEN_CHART_YEARS_BASE,
     SYNC_CACHE_BASE,
+    ASSET_META_BASE,
   ];
   const keys = bases.map((b) => stockKey(stock, b));
   if (stock === 'shutterstock') keys.push(...bases);

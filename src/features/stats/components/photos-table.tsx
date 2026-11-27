@@ -202,12 +202,16 @@ export const PhotosTable = ({ photos, shoots, licenses }: PhotosTableProps) => {
               {sorted.map((photo) => (
                 <tr key={photo.uid ?? photo.product.id}>
                   <td className={styles.table__pinned}>
-                    <img
-                      src={photo.product.thumbUrl}
-                      alt=""
-                      loading="lazy"
-                      className={styles.table__thumb}
-                    />
+                    {photo.product.thumbUrl ? (
+                      <img
+                        src={photo.product.thumbUrl}
+                        alt=""
+                        loading="lazy"
+                        className={styles.table__thumb}
+                      />
+                    ) : (
+                      <div className={styles.table__thumb} />
+                    )}
                   </td>
                   <td
                     className={`${photoStyles.photoCell} ${styles.table__titleCell}`}

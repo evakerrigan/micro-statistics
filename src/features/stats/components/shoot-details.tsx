@@ -104,12 +104,16 @@ const SoldCard = ({ photo }: { photo: PhotoStat }) => {
       {photo.product.mediaType === 'video' && (
         <span className={styles.card__badge}>{t('media.videoBadge')}</span>
       )}
-      <img
-        src={photo.product.thumbUrl}
-        alt={photo.product.headline}
-        loading="lazy"
-        className={styles.card__image}
-      />
+      {photo.product.thumbUrl ? (
+        <img
+          src={photo.product.thumbUrl}
+          alt={photo.product.headline}
+          loading="lazy"
+          className={styles.card__image}
+        />
+      ) : (
+        <div className={styles.card__placeholder}>{photo.product.headline}</div>
+      )}
       <div className={styles.card__info}>
         <span>{photo.product.id}</span>
         <strong title={revenueHint(photo, t)}>
@@ -483,12 +487,18 @@ const EditableShootPhotos = ({
                 onChange={() => toggle(photo.product.id)}
                 className={styles.card__check}
               />
-              <img
-                src={photo.product.thumbUrl}
-                alt={photo.product.headline}
-                loading="lazy"
-                className={styles.card__image}
-              />
+              {photo.product.thumbUrl ? (
+                <img
+                  src={photo.product.thumbUrl}
+                  alt={photo.product.headline}
+                  loading="lazy"
+                  className={styles.card__image}
+                />
+              ) : (
+                <div className={styles.card__placeholder}>
+                  {photo.product.headline}
+                </div>
+              )}
               <div className={styles.card__info}>
                 <a
                   href={photo.product.url}

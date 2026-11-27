@@ -102,6 +102,23 @@
     background: $color-border;
   }
 
+  &__placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    margin-bottom: $spacing-sm;
+    background: $color-border;
+    padding: $spacing-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.35;
+    color: $color-text-secondary;
+    overflow: hidden;
+  }
+
   &__info {
     display: flex;
     justify-content: space-between;
