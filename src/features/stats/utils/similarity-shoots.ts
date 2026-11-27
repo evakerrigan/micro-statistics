@@ -78,6 +78,26 @@ type DatedAsset = {
   tokens: Set<string>;
 };
 
+/** Collects unique `{ uid, thumbUrl }` entries for a stock's portfolio and sold products. */
+export const collectHashInputs = (
+  dataset: Dataset,
+  stock: StockId
+): { uid: string; thumbUrl: string }[] => {
+  const seen = new Set<string>();
+  const items: { uid: string; thumbUrl: string }[] = [];
+  for (const item of dataset.portfolio) {
+    if (!item.thumbUrl || seen.has(item.id)) continue;
+    seen.add(item.id);
+    items.push({ uid: `${stock}:${item.id}`, thumbUrl: item.thumbUrl });
+  }
+  for (const product of dataset.products) {
+    if (!product.thumbUrl || seen.has(product.id)) continue;
+    seen.add(product.id);
+    items.push({ uid: `${stock}:${product.id}`, thumbUrl: product.thumbUrl });
+  }
+  return items;
+};
+
 /**
  * Groups a stock's dated assets into shoots by visual perceptual similarity
  * and title overlap (pairs within ±1.5 months, total shoot span ≤2 months)

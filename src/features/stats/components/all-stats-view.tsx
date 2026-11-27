@@ -16,7 +16,11 @@ import { useImageHashes } from '../hooks/use-image-hashes';
 import { combineAllStats, STOCK_NAME_KEYS } from '../utils/combine';
 import { matchAcrossStocks } from '../utils/match-assets';
 import { licenseLabel } from '../utils/shoot-labels';
-import { buildYears } from '../utils/years';
+import {
+  buildSimilarityShoots,
+  collectHashInputs,
+} from '../utils/similarity-shoots';
+import { buildYears, countCalendarYears } from '../utils/years';
 import { MergedPhotosTable } from './merged-photos-table';
 import { MonthsView } from './months-view';
 import { ShootsTable } from './shoots-table';
@@ -59,19 +63,13 @@ export const AllStatsView = ({
   const [tab, setTab] = useState<TabId>('photos');
   const assetMatches = useAssetMatches();
 
-  const combined = useMemo(
-    () =>
-      combineAllStats(datasets, manualByStock, mergesByStock, namesByStock, t),
-    [datasets, manualByStock, mergesByStock, namesByStock, t]
-  );
-
   const hashInputs = useMemo(
     () =>
-      combined.allParts.map((p) => ({
-        uid: p.uid,
-        thumbUrl: p.photo.product.thumbUrl,
-      })),
-    [combined.allParts]
+      STOCK_IDS.flatMap((stock) => {
+        const ds = datasets[stock];
+        return ds ? collectHashInputs(ds, stock) : [];
+      }),
+    [datasets]
   );
 
   const {
@@ -79,7 +77,33 @@ export const AllStatsView = ({
     ready: hashesReady,
     status: hashStatus,
     retry: retryHashes,
-  } = useImageHashes(hashInputs, combined.entries.length > 1);
+  } = useImageHashes(hashInputs, hashInputs.length > 0);
+
+  const effectiveDatasets = useMemo(() => {
+    const activeHashes = hashesReady ? hashes : {};
+    const next: Partial<Record<StockId, Dataset>> = {};
+    for (const stock of STOCK_IDS) {
+      const ds = datasets[stock];
+      if (!ds) continue;
+      next[stock] = {
+        ...ds,
+        shoots: buildSimilarityShoots(ds, activeHashes, stock),
+      };
+    }
+    return next;
+  }, [datasets, hashesReady, hashes]);
+
+  const combined = useMemo(
+    () =>
+      combineAllStats(
+        effectiveDatasets,
+        manualByStock,
+        mergesByStock,
+        namesByStock,
+        t
+      ),
+    [effectiveDatasets, manualByStock, mergesByStock, namesByStock, t]
+  );
 
   const allMerged = useMemo(
     () =>
@@ -131,10 +155,10 @@ export const AllStatsView = ({
     () => buildYears(combined.shoots).length,
     [combined.shoots]
   );
-  const tabCounts: Record<TabId, number> = {
+  const tabCounts: Record<TabId, string | number> = {
     photos: mergedPhotos.length,
     shoots: combined.shoots.length,
-    months: combined.months.length,
+    months: `${countCalendarYears(combined.months)}/${combined.months.length}`,
     years: yearsCount,
   };
   const stockLabel = (key: string) =>
@@ -274,8 +298,13 @@ export const AllStatsView = ({
                 role="tab"
                 aria-selected={tab === item.id}
                 title={
-                  item.id === 'photos' && hashStatus.running
-                    ? t('all.matchingTabHint')
+                  (item.id === 'photos' || item.id === 'shoots') &&
+                  hashStatus.running
+                    ? t(
+                        item.id === 'photos'
+                          ? 'all.matchingTabHint'
+                          : 'stats.matchingShootsHint'
+                      )
                     : undefined
                 }
                 className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''}`}
@@ -283,12 +312,17 @@ export const AllStatsView = ({
               >
                 {t(item.label)}{' '}
                 <span className={styles.tabCount}>({tabCounts[item.id]})</span>
-                {item.id === 'photos' && hashStatus.running && (
-                  <span
-                    className={allStyles.tabSpinner}
-                    aria-label={t('all.matchingTabHint')}
-                  />
-                )}
+                {(item.id === 'photos' || item.id === 'shoots') &&
+                  hashStatus.running && (
+                    <span
+                      className={allStyles.tabSpinner}
+                      aria-label={t(
+                        item.id === 'photos'
+                          ? 'all.matchingTabHint'
+                          : 'stats.matchingShootsHint'
+                      )}
+                    />
+                  )}
               </button>
             ))}
           </div>

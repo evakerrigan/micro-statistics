@@ -1,6 +1,6 @@
 import type { Sale } from '@/types/shutterstock';
 import { monthsSince } from '@/utils/format';
-import { saleCountOf, type ShootStat } from './aggregate';
+import { type MonthStat, saleCountOf, type ShootStat } from './aggregate';
 
 export type YearStat = {
   /** `YYYY` */
@@ -37,6 +37,17 @@ export type YearSales = {
 export const MAX_YEAR_LINES = 8;
 
 const round = (n: number) => Math.round(n * 10000) / 10000;
+
+/** Calendar years spanned by `months` (from first sale year up to current year). */
+export const countCalendarYears = (months: MonthStat[]): number => {
+  if (!months.length) return 0;
+  const firstYear = Number(months[0].key.slice(0, 4));
+  const currentYear = new Date().getFullYear();
+  if (firstYear > currentYear) {
+    return new Set(months.map((m) => m.key.slice(0, 4))).size;
+  }
+  return currentYear - firstYear + 1;
+};
 
 /**
  * Shoots grouped by the year they were uploaded, newest year first. Sales
