@@ -57,6 +57,11 @@
   }
 }
 
+.tileWip {
+  background: var(--color-wip-bg);
+  border-color: var(--color-wip-border);
+}
+
 // Compact layout below 1024px: smaller tiles, closer together.
 @media (max-width: $breakpoint-compact) {
   .tiles {
@@ -219,10 +224,36 @@
   border-bottom-color: $color-text !important;
 }
 
+.tabWip {
+  color: var(--color-wip-text);
+
+  .tabCount {
+    color: var(--color-wip-text);
+    opacity: 0.8;
+  }
+
+  &:hover,
+  &.tabActive {
+    color: var(--color-wip-text);
+  }
+
+  &.tabActive {
+    border-bottom-color: var(--color-wip-text) !important;
+  }
+}
+
 .tabCount {
   font-weight: 400;
   color: $color-text-muted;
   font-variant-numeric: tabular-nums;
+}
+
+.tabsWipNote {
+  margin-left: auto;
+  align-self: center;
+  padding: $spacing-xs 0;
+  font-size: 12px;
+  color: var(--color-wip-text);
 }
 
 .tabSpinner {

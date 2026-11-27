@@ -207,7 +207,7 @@ export const StatsView = ({
                 ? t('stats.matchingShootsHint')
                 : undefined
             }
-            className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''}`}
+            className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''} ${item.id === 'shoots' ? styles.tabWip : ''}`}
             onClick={() => setTab(item.id)}
           >
             {t(item.label)}{' '}
@@ -220,6 +220,7 @@ export const StatsView = ({
             )}
           </button>
         ))}
+        <span className={styles.tabsWipNote}>{t('footer.wipNote')}</span>
       </div>
 
       {tab === 'shoots' && (

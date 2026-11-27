@@ -109,7 +109,9 @@ export const ShootCards = ({
                     <div className={styles.table__thumb} />
                   )}
                   <div className={cardStyles.card__text}>
-                    <div className={styles.table__primary}>
+                    <div
+                      className={`${styles.table__primary} ${(stock === 'istock' || stock === 'all') && shoot.kind === 'unmatched' ? shootStyles.wipTitle : ''}`}
+                    >
                       {shootTitle(shoot, t)}
                       {shoot.kind === 'manual' && (
                         <span className={shootStyles.manualBadge}>

@@ -5,6 +5,7 @@ export const en = {
   'footer.author': 'Made by Eva. Questions and ideas:',
   'footer.disclaimer':
     'Not affiliated with Shutterstock, Adobe Stock, or iStock.',
+  'footer.wipNote': '* Highlighted in pink are elements still in development.',
   'footer.version': 'Version {version} · {date}',
   'common.scrollTop': 'Back to top',
   'common.cancel': 'Cancel',
@@ -263,6 +264,7 @@ export const ru: Messages = {
   'app.title': 'Статистика по микростокам от Евы',
   'footer.author': 'Автор — Ева. Вопросы и предложения:',
   'footer.disclaimer': 'Не связано с Shutterstock, Adobe Stock и iStock.',
+  'footer.wipNote': '* Розовым выделены элементы, которые ещё в разработке.',
   'footer.version': 'Версия {version} · {date}',
   'common.scrollTop': 'Наверх',
   'common.cancel': 'Отмена',

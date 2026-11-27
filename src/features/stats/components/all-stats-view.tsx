@@ -228,7 +228,7 @@ export const AllStatsView = ({
               <div className={styles.tile__label}>{t('stats.sales')}</div>
               <div className={styles.tile__value}>{combined.salesCount}</div>
             </div>
-            <div className={styles.tile}>
+            <div className={`${styles.tile} ${styles.tileWip}`}>
               <div className={styles.tile__label}>{t('stats.soldPhotos')}</div>
               <div className={styles.tile__value}>
                 {deduped.soldPhotos}
@@ -246,7 +246,7 @@ export const AllStatsView = ({
                 </div>
               )}
             </div>
-            <div className={styles.tile}>
+            <div className={`${styles.tile} ${styles.tileWip}`}>
               <div className={styles.tile__label}>
                 {t('stats.portfolioSuccess')}
               </div>
@@ -256,11 +256,11 @@ export const AllStatsView = ({
                   : '—'}
               </div>
             </div>
-            <div className={styles.tile}>
+            <div className={`${styles.tile} ${styles.tileWip}`}>
               <div className={styles.tile__label}>{t('stats.shoots')}</div>
               <div className={styles.tile__value}>{combined.shootsCount}</div>
             </div>
-            <div className={styles.tile}>
+            <div className={`${styles.tile} ${styles.tileWip}`}>
               <div className={styles.tile__label}>{t('stats.perSold')}</div>
               <div className={styles.tile__value}>
                 {deduped.revenuePerSoldPhoto === null
@@ -268,7 +268,7 @@ export const AllStatsView = ({
                   : formatMoney(deduped.revenuePerSoldPhoto)}
               </div>
             </div>
-            <div className={styles.tile}>
+            <div className={`${styles.tile} ${styles.tileWip}`}>
               <div className={styles.tile__label}>
                 {t('stats.perPortfolio')}
               </div>
@@ -309,7 +309,7 @@ export const AllStatsView = ({
                       )
                     : undefined
                 }
-                className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''}`}
+                className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''} ${item.id === 'shoots' ? styles.tabWip : ''}`}
                 onClick={() => setTab(item.id)}
               >
                 {t(item.label)}{' '}
@@ -327,6 +327,7 @@ export const AllStatsView = ({
                   )}
               </button>
             ))}
+            <span className={styles.tabsWipNote}>{t('footer.wipNote')}</span>
           </div>
 
           {tab === 'months' && (
