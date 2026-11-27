@@ -18,6 +18,7 @@ import { matchAcrossStocks } from '../utils/match-assets';
 import { licenseLabel } from '../utils/shoot-labels';
 import { MergedPhotosTable } from './merged-photos-table';
 import { MonthsView } from './months-view';
+import { ShootsTable } from './shoots-table';
 import { YearsView } from './years-view';
 import allStyles from './all-stats-view.module.scss';
 import styles from './stats-view.module.scss';
@@ -29,9 +30,13 @@ type AllStatsViewProps = {
   namesByStock: Partial<Record<StockId, ShootNames>>;
 };
 
-const TABS: { id: 'months' | 'photos' | 'years'; label: MessageKey }[] = [
-  { id: 'months', label: 'tabs.months' },
+const TABS: {
+  id: 'shoots' | 'photos' | 'months' | 'years';
+  label: MessageKey;
+}[] = [
+  { id: 'shoots', label: 'tabs.shoots' },
   { id: 'photos', label: 'tabs.photos' },
+  { id: 'months', label: 'tabs.months' },
   { id: 'years', label: 'tabs.years' },
 ];
 
@@ -50,7 +55,7 @@ export const AllStatsView = ({
   namesByStock,
 }: AllStatsViewProps) => {
   const { t } = useI18n();
-  const [tab, setTab] = useState<TabId>('months');
+  const [tab, setTab] = useState<TabId>('shoots');
   const assetMatches = useAssetMatches();
 
   const combined = useMemo(
@@ -282,6 +287,14 @@ export const AllStatsView = ({
               licenses={combined.activeStocks}
               portfolioDates={combined.portfolioDates}
               formatColumn={stockLabel}
+            />
+          )}
+          {tab === 'shoots' && (
+            <ShootsTable
+              stock="all"
+              shoots={combined.shoots}
+              licenses={combined.assetLicenses}
+              readOnly
             />
           )}
           {tab === 'photos' && (

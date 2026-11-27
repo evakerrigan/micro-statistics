@@ -38,12 +38,23 @@ type MonthsChartProps = {
 /** Bars lower than this share of the plot get their label above them. */
 const LABEL_INSIDE_MIN = 12;
 
-const monthAxisLabel = (key: string, i: number, labelEvery: number) =>
-  i % labelEvery === 0
+const monthAxisLabel = (
+  key: string,
+  i: number,
+  total: number,
+  labelEvery: number
+) => {
+  if (total > 24) {
+    if (key.endsWith('-01')) return key.slice(0, 4);
+    if (i === 0 && Number(key.slice(5, 7)) <= 9) return key.slice(0, 4);
+    return '';
+  }
+  return i % labelEvery === 0
     ? key.endsWith('-01') || i === 0
       ? formatMonth(key)
       : formatMonthShort(key)
     : '';
+};
 
 /** Monthly bars, optionally over the growth of the portfolio. */
 export const MonthsChart = ({
@@ -189,7 +200,7 @@ export const MonthsChart = ({
           <span key={m.key} className={styles.label}>
             {formatAxisKey
               ? formatAxisKey(m.key)
-              : monthAxisLabel(m.key, i, labelEvery)}
+              : monthAxisLabel(m.key, i, months.length, labelEvery)}
           </span>
         ))}
       </div>

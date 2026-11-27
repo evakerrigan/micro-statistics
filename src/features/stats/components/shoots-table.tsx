@@ -31,14 +31,15 @@ import styles from './table.module.scss';
 import shootStyles from './shoots-table.module.scss';
 
 type ShootsTableProps = {
-  stock: StockId;
+  stock: StockId | 'all';
   shoots: ShootStat[];
   licenses: string[];
-  manualShoots: ManualShoot[];
-  onManualShootsChange: (update: ManualShootsUpdate) => void;
-  onMergeShoot: (source: string, target: string) => void;
-  onUnmergeShoot: (source: string) => void;
-  onRenameShoot: (key: string, title: string) => void;
+  manualShoots?: ManualShoot[];
+  onManualShootsChange?: (update: ManualShootsUpdate) => void;
+  onMergeShoot?: (source: string, target: string) => void;
+  onUnmergeShoot?: (source: string) => void;
+  onRenameShoot?: (key: string, title: string) => void;
+  readOnly?: boolean;
 };
 
 export const ShootsTable = ({
@@ -50,6 +51,7 @@ export const ShootsTable = ({
   onMergeShoot,
   onUnmergeShoot,
   onRenameShoot,
+  readOnly,
 }: ShootsTableProps) => {
   const { t } = useI18n();
   const compact = useMediaQuery(COMPACT_QUERY);
@@ -98,6 +100,7 @@ export const ShootsTable = ({
         onMergeShoot={onMergeShoot}
         onUnmergeShoot={onUnmergeShoot}
         onRenameShoot={onRenameShoot}
+        readOnly={readOnly}
         {...header}
       />
     );
@@ -259,6 +262,7 @@ export const ShootsTable = ({
                         onMergeShoot={onMergeShoot}
                         onUnmergeShoot={onUnmergeShoot}
                         onRenameShoot={onRenameShoot}
+                        readOnly={readOnly}
                       />
                     </td>
                   </tr>

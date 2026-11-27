@@ -29,15 +29,39 @@ import {
 import styles from './shoot-details.module.scss';
 
 type ShootDetailsProps = {
+  stock: StockId | 'all';
+  shoot: ShootStat;
+  manualShoots?: ManualShoot[];
+  onManualShootsChange?: (update: ManualShootsUpdate) => void;
+  /** Every shoot in the table, to pick one to join into this one. */
+  shoots: ShootStat[];
+  onMergeShoot?: (source: string, target: string) => void;
+  onUnmergeShoot?: (source: string) => void;
+  onRenameShoot?: (key: string, title: string) => void;
+  readOnly?: boolean;
+};
+
+type EditableShootDetailsProps = {
   stock: StockId;
   shoot: ShootStat;
   manualShoots: ManualShoot[];
   onManualShootsChange: (update: ManualShootsUpdate) => void;
-  /** Every shoot in the table, to pick one to join into this one. */
   shoots: ShootStat[];
   onMergeShoot: (source: string, target: string) => void;
   onUnmergeShoot: (source: string) => void;
   onRenameShoot: (key: string, title: string) => void;
+};
+
+const resolveShootStock = (
+  stock: StockId | 'all',
+  shootKey: string
+): StockId => {
+  if (stock !== 'all') return stock;
+  const prefix = shootKey.split(':')[0];
+  if (prefix === 'adobe' || prefix === 'shutterstock' || prefix === 'istock') {
+    return prefix;
+  }
+  return 'shutterstock';
 };
 
 const byAssetId = (a: PhotoStat, b: PhotoStat) =>
@@ -184,7 +208,7 @@ const MergeForm = ({
   onMergeShoot,
   onUnmergeShoot,
 }: Pick<
-  ShootDetailsProps,
+  EditableShootDetailsProps,
   'shoot' | 'shoots' | 'onMergeShoot' | 'onUnmergeShoot'
 >) => {
   const { t } = useI18n();
@@ -263,7 +287,7 @@ const EditableShootPhotos = ({
   showHint = true,
   allowCreate = shoot.kind !== 'manual',
 }: Pick<
-  ShootDetailsProps,
+  EditableShootDetailsProps,
   'stock' | 'shoot' | 'manualShoots' | 'onManualShootsChange'
 > & {
   showHint?: boolean;
@@ -525,7 +549,7 @@ const UploadDateShootPhotos = ({
   onMergeShoot,
   onUnmergeShoot,
   onRenameShoot,
-}: ShootDetailsProps) => {
+}: EditableShootDetailsProps) => {
   const { t } = useI18n();
   const [selecting, setSelecting] = useState(false);
   const displayTitle = shoot.customTitle ?? shootTitle(shoot, t);
@@ -582,9 +606,47 @@ const UploadDateShootPhotos = ({
   );
 };
 
-export const ShootDetails = (props: ShootDetailsProps) =>
-  props.shoot.kind === 'auto' ? (
-    <UploadDateShootPhotos {...props} />
+export const ShootDetails = (props: ShootDetailsProps) => {
+  const { t } = useI18n();
+  const resolvedStock = resolveShootStock(props.stock, props.shoot.key);
+  const isReadOnly =
+    props.readOnly ||
+    props.stock === 'all' ||
+    !props.onManualShootsChange ||
+    !props.onMergeShoot ||
+    !props.onUnmergeShoot ||
+    !props.onRenameShoot;
+
+  if (isReadOnly) {
+    if (!props.shoot.photos.length && !props.shoot.unsoldPhotos.length) {
+      return <p className={styles.empty}>{t('details.noPhotos')}</p>;
+    }
+    return (
+      <div className={styles.grid}>
+        {props.shoot.photos.map((photo) => (
+          <SoldCard key={photo.product.id} photo={photo} />
+        ))}
+        {props.shoot.unsoldPhotos.map((photo) => (
+          <UnsoldCard key={photo.id} stock={resolvedStock} photo={photo} />
+        ))}
+      </div>
+    );
+  }
+
+  const editableProps = {
+    stock: resolvedStock,
+    shoot: props.shoot,
+    shoots: props.shoots,
+    manualShoots: props.manualShoots ?? [],
+    onManualShootsChange: props.onManualShootsChange!,
+    onMergeShoot: props.onMergeShoot!,
+    onUnmergeShoot: props.onUnmergeShoot!,
+    onRenameShoot: props.onRenameShoot!,
+  };
+
+  return props.shoot.kind === 'auto' ? (
+    <UploadDateShootPhotos {...editableProps} />
   ) : (
-    <EditableShootPhotos {...props} />
+    <EditableShootPhotos {...editableProps} />
   );
+};

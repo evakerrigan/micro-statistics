@@ -22,17 +22,18 @@ import styles from './table.module.scss';
 import shootStyles from './shoots-table.module.scss';
 
 type ShootCardsProps = SortState & {
-  stock: StockId;
+  stock: StockId | 'all';
   /** Already sorted. */
   shoots: ShootStat[];
   /** Every shoot, for joining shoots together in the details. */
   allShoots: ShootStat[];
   licenses: string[];
-  manualShoots: ManualShoot[];
-  onManualShootsChange: (update: ManualShootsUpdate) => void;
-  onMergeShoot: (source: string, target: string) => void;
-  onUnmergeShoot: (source: string) => void;
-  onRenameShoot: (key: string, title: string) => void;
+  manualShoots?: ManualShoot[];
+  onManualShootsChange?: (update: ManualShootsUpdate) => void;
+  onMergeShoot?: (source: string, target: string) => void;
+  onUnmergeShoot?: (source: string) => void;
+  onRenameShoot?: (key: string, title: string) => void;
+  readOnly?: boolean;
 };
 
 /** The shoots table as cards, for narrow screens. */

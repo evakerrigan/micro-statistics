@@ -20,12 +20,25 @@ const LICENSE_KEYS: Record<string, MessageKey> = {
   adobe_firefly: 'license.adobe_firefly',
   adobe_other_payment: 'license.adobe_other_payment',
   adobe_historical: 'license.adobe_historical',
+  istock_subscription: 'license.istock_subscription',
+  istock_premium_access: 'license.istock_premium_access',
+  istock_credit: 'license.istock_credit',
+  istock_rf: 'license.istock_rf',
+  istock_partner: 'license.istock_partner',
+  istock_connect: 'license.istock_connect',
+  istock_editorial: 'license.istock_editorial',
+  istock_pending: 'license.istock_pending',
+  istock_other: 'license.istock_other',
   [UNKNOWN_LICENSE]: 'license.other',
 };
 
 /** A shoot's name for display; «No shoot» is translated and date-shoots use formatted date unless renamed. */
 export const shootTitle = (shoot: ShootStat, t: Translate) => {
-  if (shoot.kind === 'unmatched') return t('shoot.unmatched');
+  if (shoot.kind === 'unmatched') {
+    return shoot.customTitle
+      ? `${shoot.customTitle} · ${t('shoot.unmatched')}`
+      : t('shoot.unmatched');
+  }
   if (shoot.kind === 'auto') {
     return shoot.customTitle || formatDate(shoot.uploadedAt);
   }
