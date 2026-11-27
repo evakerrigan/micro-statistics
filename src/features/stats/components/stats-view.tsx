@@ -144,14 +144,6 @@ export const StatsView = ({
           })}
         </p>
       )}
-      {stock === 'adobe' && stats.historicalOnly && (
-        <p className={styles.notice}>
-          {t('stats.adobeHistorical', {
-            count: stats.historicalOnly.count,
-            amount: formatMoney(stats.historicalOnly.amount),
-          })}
-        </p>
-      )}
       {unmatched && unmatched.photos.length > 0 && (
         <p className={styles.notice}>
           {t('stats.unmatched', {
