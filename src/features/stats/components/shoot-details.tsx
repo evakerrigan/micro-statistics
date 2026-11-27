@@ -350,6 +350,21 @@ const EditableShootPhotos = ({
     setNewTitle('');
   };
 
+  const handleDetach = () => {
+    const byId = new Map(allPhotos.map((p) => [p.product.id, p]));
+    apply((shoots) => {
+      let next = shoots;
+      for (const id of selectedIds) {
+        const photo = byId.get(id);
+        const title = photo?.product.createdAt
+          ? formatDate(photo.product.createdAt)
+          : photo?.product.headline.trim() || id;
+        next = createManualShoot(next, title, [id]);
+      }
+      return next;
+    });
+  };
+
   const handleMove = () => {
     if (target) apply((s) => addToManualShoot(s, target.id, selectedIds));
   };
@@ -425,6 +440,13 @@ const EditableShootPhotos = ({
             disabled={!selectedIds.length || !newTitle.trim()}
           >
             {t('details.create')}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleDetach}
+            disabled={!selectedIds.length}
+          >
+            {t('details.detach')}
           </Button>
         </div>
       )}
