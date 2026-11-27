@@ -3,9 +3,9 @@
     "message": "Microstock Statistics"
   },
   "extShortName": {
-    "message": "Microstock Stats"
+    "message": "Microstock"
   },
   "extDescription": {
-    "message": "Sales statistics for microstock contributors: earnings by file, shoot, month and license type across Shutterstock, Adobe Stock and iStock."
+    "message": "Sales stats for microstock contributors: earnings by file, shoot, month and license across Shutterstock, Adobe Stock, and iStock."
   }
 }
