@@ -178,11 +178,17 @@ const loadViaFetch = async (
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const res = await fetch(url, {
-        credentials: 'omit',
+        credentials: attempt === 0 ? 'omit' : 'include',
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
       if (!res.ok) {
-        if ((res.status === 429 || res.status >= 500) && attempt === 0) {
+        if (
+          (res.status === 401 ||
+            res.status === 403 ||
+            res.status === 429 ||
+            res.status >= 500) &&
+          attempt === 0
+        ) {
           await sleep(RETRY_DELAY_MS);
           continue;
         }

@@ -69,10 +69,12 @@ export type ShootPhoto = {
  * An automatic shoot grouped by upload date (`YYYY-MM-DD`).
  */
 export type Shoot = {
-  /** Upload date `YYYY-MM-DD`. */
+  /** Upload date `YYYY-MM-DD` (or deterministic cluster ID for similarity shoots). */
   id: string;
   /** Default title (upload date `YYYY-MM-DD`). */
   title: string;
+  /** Optional 1-based sequential shoot number (used by similarity-grouped shoots). */
+  sequenceNumber?: number;
   /** Upload date `YYYY-MM-DD`. */
   uploadedAt: string;
   /** IDs of all known photos and videos uploaded on that date. */

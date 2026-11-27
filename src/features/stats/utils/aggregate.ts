@@ -39,6 +39,7 @@ export type ShootStat = {
   kind: ShootKind;
   manualId: string | null;
   title: string;
+  sequenceNumber?: number;
   customTitle: string | null;
   /** Upload date `YYYY-MM-DD` for upload-date shoots. */
   uploadedAt: string | null;
@@ -283,6 +284,7 @@ export const buildStats = (
     | 'kind'
     | 'manualId'
     | 'title'
+    | 'sequenceNumber'
     | 'customTitle'
     | 'uploadedAt'
     | 'publishedAt'
@@ -349,6 +351,7 @@ export const buildStats = (
         kind: 'auto',
         manualId: null,
         title: shoot.title,
+        sequenceNumber: shoot.sequenceNumber,
         customTitle,
         uploadedAt: shoot.uploadedAt,
         publishedAt: earliest([

@@ -3,12 +3,15 @@ import { useI18n } from '@/hooks/use-i18n';
 import type { MessageKey } from '@/lib/i18n';
 import type { Dataset, StockId } from '@/types/stock';
 import { formatMoney, formatPercent } from '@/utils/format';
+import { useImageHashes } from '../hooks/use-image-hashes';
 import { useManualShoots } from '../hooks/use-manual-shoots';
 import { useShootMerges } from '../hooks/use-shoot-merges';
 import { useShootNames } from '../hooks/use-shoot-names';
 import { buildStats } from '../utils/aggregate';
 import { STOCK_NAME_KEYS } from '../utils/combine';
 import { licenseLabel } from '../utils/shoot-labels';
+import { buildSimilarityShoots } from '../utils/similarity-shoots';
+import { buildYears } from '../utils/years';
 import { MonthsView } from './months-view';
 import { PhotosTable } from './photos-table';
 import { ShootsTable } from './shoots-table';
@@ -38,15 +41,56 @@ export const StatsView = ({
 }: StatsViewProps) => {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabId>('photos');
+  const useSimilarityShoots = stock === 'istock';
+  const hashInputs = useMemo(() => {
+    if (!useSimilarityShoots) return [];
+    const seen = new Set<string>();
+    const items: { uid: string; thumbUrl: string }[] = [];
+    for (const item of dataset.portfolio) {
+      if (!item.thumbUrl || seen.has(item.id)) continue;
+      seen.add(item.id);
+      items.push({ uid: `${stock}:${item.id}`, thumbUrl: item.thumbUrl });
+    }
+    for (const product of dataset.products) {
+      if (!product.thumbUrl || seen.has(product.id)) continue;
+      seen.add(product.id);
+      items.push({ uid: `${stock}:${product.id}`, thumbUrl: product.thumbUrl });
+    }
+    return items;
+  }, [dataset, stock, useSimilarityShoots]);
+  const {
+    hashes,
+    ready: hashesReady,
+    status: hashStatus,
+  } = useImageHashes(hashInputs, useSimilarityShoots);
+
+  const effectiveDataset = useMemo(() => {
+    if (!useSimilarityShoots) return dataset;
+    return {
+      ...dataset,
+      shoots: buildSimilarityShoots(dataset, hashesReady ? hashes : {}, stock),
+    };
+  }, [dataset, stock, useSimilarityShoots, hashesReady, hashes]);
+
   const manual = useManualShoots(stock);
   const merges = useShootMerges(stock);
   const shootNames = useShootNames(stock);
   const stats = useMemo(
     () =>
-      buildStats(dataset, manual.value, merges.value, shootNames.value, stock),
-    [dataset, manual.value, merges.value, shootNames.value, stock]
+      buildStats(
+        effectiveDataset,
+        manual.value,
+        merges.value,
+        shootNames.value,
+        stock
+      ),
+    [effectiveDataset, manual.value, merges.value, shootNames.value, stock]
   );
   const ready = manual.ready && merges.ready && shootNames.ready;
+  const yearsCount = useMemo(
+    () => buildYears(stats.shoots).length,
+    [stats.shoots]
+  );
 
   // Wait for user customizations, so «No shoot» or old names don't flash on load.
   if (!ready) return null;
@@ -55,6 +99,12 @@ export const StatsView = ({
     Math.round((stats.shutterstockTotal - stats.revenue) * 100) / 100;
   const matchedShoots = stats.shoots.filter((s) => s.kind !== 'unmatched');
   const unmatched = stats.shoots.find((s) => s.kind === 'unmatched');
+  const tabCounts: Record<TabId, number> = {
+    photos: stats.photos.length,
+    shoots: stats.shoots.length,
+    months: stats.months.length,
+    years: yearsCount,
+  };
 
   return (
     <div className={styles.stats}>
@@ -160,10 +210,22 @@ export const StatsView = ({
             type="button"
             role="tab"
             aria-selected={tab === item.id}
+            title={
+              item.id === 'shoots' && hashStatus.running
+                ? t('stats.matchingShootsHint')
+                : undefined
+            }
             className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''}`}
             onClick={() => setTab(item.id)}
           >
-            {t(item.label)}
+            {t(item.label)}{' '}
+            <span className={styles.tabCount}>({tabCounts[item.id]})</span>
+            {item.id === 'shoots' && hashStatus.running && (
+              <span
+                className={styles.tabSpinner}
+                aria-label={t('stats.matchingShootsHint')}
+              />
+            )}
           </button>
         ))}
       </div>

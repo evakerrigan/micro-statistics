@@ -104,6 +104,7 @@ export const en = {
     'Adobe Stock does not provide per-file dollar revenue for sales older than 3 years.',
   'stats.partialRevenueHint':
     'Revenue is for the last 3 years ({known} of {total} downloads); older per-file earnings are not exposed by Adobe Stock.',
+  'stats.matchingShootsHint': 'Grouping similar files into shoots…',
   'tabs.shoots': 'By shoot',
   'tabs.photos': 'By file',
   'tabs.months': 'By year/month',
@@ -361,6 +362,7 @@ export const ru: Messages = {
     'Adobe Stock не отдаёт сумму дохода по отдельным файлам старше 3 лет.',
   'stats.partialRevenueHint':
     'Доход показан за последние 3 года ({known} из {total} загр.); более старые суммы Adobe Stock пофайлово не отдаёт.',
+  'stats.matchingShootsHint': 'Идёт поиск похожих фото для съёмок…',
   'tabs.shoots': 'По съёмкам',
   'tabs.photos': 'По файлам',
   'tabs.months': 'По годам/месяцам',

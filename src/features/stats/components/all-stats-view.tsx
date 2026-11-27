@@ -16,6 +16,7 @@ import { useImageHashes } from '../hooks/use-image-hashes';
 import { combineAllStats, STOCK_NAME_KEYS } from '../utils/combine';
 import { matchAcrossStocks } from '../utils/match-assets';
 import { licenseLabel } from '../utils/shoot-labels';
+import { buildYears } from '../utils/years';
 import { MergedPhotosTable } from './merged-photos-table';
 import { MonthsView } from './months-view';
 import { ShootsTable } from './shoots-table';
@@ -126,6 +127,16 @@ export const AllStatsView = ({
   }, [allMerged, combined.revenue]);
 
   const entryByStock = new Map(combined.entries.map((e) => [e.stock, e]));
+  const yearsCount = useMemo(
+    () => buildYears(combined.shoots).length,
+    [combined.shoots]
+  );
+  const tabCounts: Record<TabId, number> = {
+    photos: mergedPhotos.length,
+    shoots: combined.shoots.length,
+    months: combined.months.length,
+    years: yearsCount,
+  };
   const stockLabel = (key: string) =>
     key in STOCK_NAME_KEYS ? t(STOCK_NAME_KEYS[key as StockId]) : key;
 
@@ -270,7 +281,8 @@ export const AllStatsView = ({
                 className={`${styles.tab} ${tab === item.id ? styles.tabActive : ''}`}
                 onClick={() => setTab(item.id)}
               >
-                {t(item.label)}
+                {t(item.label)}{' '}
+                <span className={styles.tabCount}>({tabCounts[item.id]})</span>
                 {item.id === 'photos' && hashStatus.running && (
                   <span
                     className={allStyles.tabSpinner}

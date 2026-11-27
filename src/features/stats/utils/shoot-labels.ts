@@ -40,7 +40,11 @@ export const shootTitle = (shoot: ShootStat, t: Translate) => {
       : t('shoot.unmatched');
   }
   if (shoot.kind === 'auto') {
-    return shoot.customTitle || formatDate(shoot.uploadedAt);
+    if (shoot.customTitle) return shoot.customTitle;
+    const dateLabel = formatDate(shoot.uploadedAt);
+    return shoot.sequenceNumber != null
+      ? `#${shoot.sequenceNumber} · ${dateLabel}`
+      : dateLabel;
   }
   return shoot.title;
 };
