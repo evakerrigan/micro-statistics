@@ -156,7 +156,9 @@ export const AllStatsView = ({
     [combined.shoots]
   );
   const tabCounts: Record<TabId, string | number> = {
-    photos: mergedPhotos.length,
+    photos: deduped.publishedPhotos
+      ? `${mergedPhotos.length}/${deduped.publishedPhotos}`
+      : mergedPhotos.length,
     shoots: combined.shoots.length,
     months: `${countCalendarYears(combined.months)}/${combined.months.length}`,
     years: yearsCount,

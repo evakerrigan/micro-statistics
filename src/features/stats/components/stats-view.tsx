@@ -90,7 +90,9 @@ export const StatsView = ({
   const matchedShoots = stats.shoots.filter((s) => s.kind !== 'unmatched');
   const unmatched = stats.shoots.find((s) => s.kind === 'unmatched');
   const tabCounts: Record<TabId, string | number> = {
-    photos: stats.photos.length,
+    photos: stats.publishedPhotos
+      ? `${stats.photos.length}/${stats.publishedPhotos}`
+      : stats.photos.length,
     shoots: stats.shoots.length,
     months: `${countCalendarYears(stats.months)}/${stats.months.length}`,
     years: yearsCount,
