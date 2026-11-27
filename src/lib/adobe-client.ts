@@ -4,12 +4,10 @@
  * user's existing login session, cookies and CSRF token exactly like the SPA.
  */
 
+import { MAX_RETRIES, pause, sleep } from './request-pacing';
+
 export const ADOBE_ORIGIN = 'https://contributor.stock.adobe.com';
 const ADOBE_TAB_PATH = '/portfolio';
-
-const REQUEST_DELAY_MIN_MS = 120;
-const REQUEST_DELAY_MAX_MS = 240;
-const MAX_RETRIES = 3;
 
 export class AdobeAuthError extends Error {
   constructor() {
@@ -36,14 +34,6 @@ export class AdobeFormatError extends Error {
     this.name = 'AdobeFormatError';
   }
 }
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-const pause = () =>
-  sleep(
-    REQUEST_DELAY_MIN_MS +
-      Math.random() * (REQUEST_DELAY_MAX_MS - REQUEST_DELAY_MIN_MS)
-  );
 
 const waitForTabLoad = (tabId: number) =>
   new Promise<void>((resolve) => {

@@ -39,7 +39,7 @@ import type { SyncProgress } from './collect';
 type OnProgress = (progress: SyncProgress) => void;
 
 const CACHE_SIGNATURE = 'tsv-v2';
-const CONCURRENCY = 3;
+const CONCURRENCY = 1;
 const CHECKPOINT_EVERY = 10;
 const ADP_CHUNK_SIZE = 50;
 

@@ -5,15 +5,13 @@
  * anti-forgery tokens.
  */
 
+import { MAX_RETRIES, pause, sleep } from './request-pacing';
+
 export const GETTY_ACCOUNT_ORIGIN = 'https://accountmanagement.gettyimages.com';
 const GETTY_ACCOUNT_TAB_PATH = '/Reports/Export';
 
 export const ESP_ORIGIN = 'https://esp.gettyimages.com';
 const ESP_TAB_PATH = '/contribute/stats';
-
-const REQUEST_DELAY_MIN_MS = 120;
-const REQUEST_DELAY_MAX_MS = 240;
-const MAX_RETRIES = 3;
 
 export type IstockAuthSource = 'accountmanagement' | 'esp';
 
@@ -47,14 +45,6 @@ export class IstockFormatError extends Error {
     this.name = 'IstockFormatError';
   }
 }
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-const pause = () =>
-  sleep(
-    REQUEST_DELAY_MIN_MS +
-      Math.random() * (REQUEST_DELAY_MAX_MS - REQUEST_DELAY_MIN_MS)
-  );
 
 const waitForTabLoad = (tabId: number) =>
   new Promise<void>((resolve) => {

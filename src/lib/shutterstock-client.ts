@@ -5,13 +5,10 @@
  * own requests do. Nothing is stored or sent anywhere else.
  */
 
+import { MAX_RETRIES, pause, sleep } from './request-pacing';
+
 export const SHUTTERSTOCK_ORIGIN = 'https://submit.shutterstock.com';
 const SHUTTERSTOCK_TAB_PATH = '/en/dashboard';
-
-// Gentle pacing: short delay between requests plus adaptive backoff on 429/5xx.
-const REQUEST_DELAY_MIN_MS = 120;
-const REQUEST_DELAY_MAX_MS = 240;
-const MAX_RETRIES = 3;
 
 /** Shutterstock returned no data — usually the user is not logged in. */
 export class ShutterstockAuthError extends Error {
@@ -43,15 +40,6 @@ export class ShutterstockFormatError extends Error {
 
 export const isExtensionContext = (): boolean =>
   typeof chrome !== 'undefined' && !!chrome.scripting;
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-const pause = (extraMs = 0) =>
-  sleep(
-    REQUEST_DELAY_MIN_MS +
-      Math.random() * (REQUEST_DELAY_MAX_MS - REQUEST_DELAY_MIN_MS) +
-      extraMs
-  );
 
 const waitForTabLoad = (tabId: number) =>
   new Promise<void>((resolve) => {

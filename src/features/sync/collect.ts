@@ -40,7 +40,7 @@ export type SyncProgress = {
 type OnProgress = (progress: SyncProgress) => void;
 
 const MAX_PORTFOLIO_PAGES = 500;
-const CONCURRENCY = 3;
+const CONCURRENCY = 1;
 const CHECKPOINT_EVERY = 25;
 
 const monthKeyOf = (d: Date) =>
