@@ -57,11 +57,11 @@ export const AllStatsView = ({
 
   const hashInputs = useMemo(
     () =>
-      combined.photoParts.map((p) => ({
+      combined.allParts.map((p) => ({
         uid: p.uid,
         thumbUrl: p.photo.product.thumbUrl,
       })),
-    [combined.photoParts]
+    [combined.allParts]
   );
 
   const {
@@ -71,21 +71,50 @@ export const AllStatsView = ({
     retry: retryHashes,
   } = useImageHashes(hashInputs, combined.entries.length > 1);
 
-  const mergedPhotos = useMemo(
+  const allMerged = useMemo(
     () =>
       matchAcrossStocks(
-        combined.photoParts,
+        combined.allParts,
         hashesReady ? hashes : {},
         assetMatches.ready ? assetMatches.value : { links: [], unlinks: [] }
       ),
     [
-      combined.photoParts,
+      combined.allParts,
       hashesReady,
       hashes,
       assetMatches.ready,
       assetMatches.value,
     ]
   );
+
+  const mergedPhotos = useMemo(
+    () => allMerged.filter((g) => g.salesCount > 0 || g.revenue > 0),
+    [allMerged]
+  );
+
+  const deduped = useMemo(() => {
+    const publishedPhotos = allMerged.length;
+    const soldPhotos = allMerged.filter(
+      (g) => g.salesCount > 0 || g.revenue > 0
+    ).length;
+    const photoCount = allMerged.filter(
+      (g) => g.primary.photo.product.mediaType === 'photo'
+    ).length;
+    const videoCount = allMerged.filter(
+      (g) => g.primary.photo.product.mediaType === 'video'
+    ).length;
+    const r = (n: number) => Math.round(n * 10000) / 10000;
+    return {
+      publishedPhotos,
+      soldPhotos,
+      photoCount,
+      videoCount,
+      revenuePerSoldPhoto: soldPhotos ? r(combined.revenue / soldPhotos) : null,
+      revenuePerPortfolioPhoto: publishedPhotos
+        ? r(combined.revenue / publishedPhotos)
+        : null,
+    };
+  }, [allMerged, combined.revenue]);
 
   const entryByStock = new Map(combined.entries.map((e) => [e.stock, e]));
   const stockLabel = (key: string) =>
@@ -156,17 +185,17 @@ export const AllStatsView = ({
             <div className={styles.tile}>
               <div className={styles.tile__label}>{t('stats.soldPhotos')}</div>
               <div className={styles.tile__value}>
-                {combined.soldPhotos}
+                {deduped.soldPhotos}
                 <span className={styles.tile__of}>
                   {' '}
-                  {t('stats.of', { n: combined.publishedPhotos })}
+                  {t('stats.of', { n: deduped.publishedPhotos })}
                 </span>
               </div>
-              {combined.videoCount > 0 && (
+              {deduped.videoCount > 0 && (
                 <div className={styles.tile__sub}>
                   {t('stats.portfolioBreakdown', {
-                    photos: combined.photoCount,
-                    videos: combined.videoCount,
+                    photos: deduped.photoCount,
+                    videos: deduped.videoCount,
                   })}
                 </div>
               )}
@@ -176,10 +205,8 @@ export const AllStatsView = ({
                 {t('stats.portfolioSuccess')}
               </div>
               <div className={styles.tile__value}>
-                {combined.publishedPhotos
-                  ? formatPercent(
-                      combined.soldPhotos / combined.publishedPhotos
-                    )
+                {deduped.publishedPhotos
+                  ? formatPercent(deduped.soldPhotos / deduped.publishedPhotos)
                   : '—'}
               </div>
             </div>
@@ -190,9 +217,9 @@ export const AllStatsView = ({
             <div className={styles.tile}>
               <div className={styles.tile__label}>{t('stats.perSold')}</div>
               <div className={styles.tile__value}>
-                {combined.revenuePerSoldPhoto === null
+                {deduped.revenuePerSoldPhoto === null
                   ? '—'
-                  : formatMoney(combined.revenuePerSoldPhoto)}
+                  : formatMoney(deduped.revenuePerSoldPhoto)}
               </div>
             </div>
             <div className={styles.tile}>
@@ -200,9 +227,9 @@ export const AllStatsView = ({
                 {t('stats.perPortfolio')}
               </div>
               <div className={styles.tile__value}>
-                {combined.revenuePerPortfolioPhoto === null
+                {deduped.revenuePerPortfolioPhoto === null
                   ? '—'
-                  : formatMoney(combined.revenuePerPortfolioPhoto)}
+                  : formatMoney(deduped.revenuePerPortfolioPhoto)}
               </div>
             </div>
           </div>

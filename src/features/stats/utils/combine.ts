@@ -47,6 +47,7 @@ export type CombinedStats = {
   months: MonthStat[];
   portfolioDates: string[];
   photoParts: StockPhotoPart[];
+  allParts: StockPhotoPart[];
   shoots: ShootStat[];
 };
 
@@ -80,6 +81,7 @@ export const combineAllStats = (
   const assetLicenseTotals: LicenseTotals = {};
   const monthMap = new Map<string, MonthStat>();
   const photoParts: StockPhotoPart[] = [];
+  const allParts: StockPhotoPart[] = [];
   const allShoots: ShootStat[] = [];
   const portfolioDates: string[] = [];
 
@@ -91,7 +93,7 @@ export const combineAllStats = (
   let videoCount = 0;
   let shootsCount = 0;
 
-  for (const { stock, stats } of entries) {
+  for (const { stock, stats, dataset } of entries) {
     const stockName = t(STOCK_NAME_KEYS[stock]);
     revenue = round(revenue + stats.revenue);
     salesCount += stats.salesCount;
@@ -145,11 +147,53 @@ export const combineAllStats = (
       }
       const shootLabel =
         (p.shootKey ? shootTitleByKey.get(p.shootKey) : undefined) ?? stockName;
-      photoParts.push({
+      const part: StockPhotoPart = {
         uid: `${stock}:${p.product.id}`,
         stock,
         photo: p,
         shootLabel,
+      };
+      photoParts.push(part);
+      allParts.push(part);
+    }
+
+    // Add unsold portfolio items to allParts for cross-stock deduplication.
+    const soldIdsForStock = new Set(stats.photos.map((p) => p.product.id));
+    const shootKeyOfPortfolio = new Map<string, string>();
+    for (const shoot of dataset.shoots) {
+      for (const id of shoot.photoIds) {
+        shootKeyOfPortfolio.set(id, `${stock}:${shoot.id}`);
+      }
+    }
+    for (const item of dataset.portfolio) {
+      if (soldIdsForStock.has(item.id)) continue;
+      const itemShootKey = shootKeyOfPortfolio.get(item.id) ?? null;
+      const unsoldShootLabel =
+        (itemShootKey ? shootTitleByKey.get(itemShootKey) : undefined) ??
+        stockName;
+      allParts.push({
+        uid: `${stock}:${item.id}`,
+        stock,
+        photo: {
+          product: {
+            id: item.id,
+            mediaType: item.mediaType,
+            isIllustration: item.isIllustration,
+            headline: item.headline,
+            createdAt: item.createdAt,
+            thumbUrl: item.thumbUrl,
+            url: '',
+            sales: [],
+          },
+          shootKey: itemShootKey,
+          sales: [],
+          detailedSalesCount: 0,
+          salesCount: 0,
+          revenue: 0,
+          lastSale: null,
+          byLicense: {},
+        },
+        shootLabel: unsoldShootLabel,
       });
     }
 
@@ -182,6 +226,7 @@ export const combineAllStats = (
   }
 
   photoParts.sort((a, b) => b.photo.revenue - a.photo.revenue);
+  allParts.sort((a, b) => b.photo.revenue - a.photo.revenue);
   portfolioDates.sort();
   const months = [...monthMap.values()].sort((a, b) =>
     a.key.localeCompare(b.key)
@@ -215,6 +260,7 @@ export const combineAllStats = (
     months,
     portfolioDates,
     photoParts,
+    allParts,
     shoots: allShoots,
   };
 };
