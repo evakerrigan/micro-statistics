@@ -7,10 +7,10 @@
 
 ### 1. Подготовить архив
 
-1. Проверить версию: `version` в `public/manifest.json` (`1.0.0`) и
+1. Проверить версию: `version` в `public/manifest.json` (`1.0.1`) и
    `version` в `package.json` должны совпадать.
 2. Собрать архив: `npm run package` →
-   `release/microstock-statistics-1.0.0.zip`. Внутри то же, что в
+   `release/microstock-statistics-1.0.1.zip`. Внутри то же, что в
    `dist/`: `manifest.json` в корне архива, иконки, `_locales/en` и `_locales/ru`.
 3. Последняя проверка: в `chrome://extensions` загрузить распакованную `dist/`
    и полностью загрузить данные по стокам. Убедиться, что нет ошибок на карточке
